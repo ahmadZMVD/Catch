@@ -52,7 +52,8 @@ class RepositoryHygieneTest {
             "app/src/main/java/com/example/CatchSongApplication.kt",
             "app/src/main/java/com/example/ui/CatchSongViewModel.kt",
             "app/src/test/java/com/example/ExampleUnitTest.kt",
-            "app/src/test/java/com/example/ExampleRobolectricTest.kt"
+            "app/src/test/java/com/example/ExampleRobolectricTest.kt",
+            "app/src/androidTest/java/com/example/ExampleInstrumentedTest.kt"
         )
         for (relativePath in forbiddenPaths) {
             assertFalse(
