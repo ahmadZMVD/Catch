@@ -159,7 +159,7 @@ class SongRepository(private val dao: CapturedSongDao) {
         for ((index, song) in songs.withIndex()) {
             val dateStr = dateFormat.format(Date(song.capturedAtEpochMillis))
             val artistPart = if (song.artistName.isNotBlank()) " - ${song.artistName}" else ""
-            sb.appendLine("${index + 1}. ${song.displayTitle}$artistPart [$dateStr] (${song.searchQueryBase} دانلود)")
+            sb.appendLine("${index + 1}. ${song.displayTitle}$artistPart [$dateStr] (${song.searchQueryBase} \u062F\u0627\u0646\u0644\u0648\u062F)")
         }
         return sb.toString()
     }

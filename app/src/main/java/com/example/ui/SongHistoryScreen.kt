@@ -106,7 +106,7 @@ import com.example.R
 import com.example.data.local.CapturedSongEntity
 import com.example.ui.theme.LocalBoneTokens
 import com.example.util.AddedTileOutcome
-import com.example.util.OneUiPermissionHelper
+import com.example.util.SystemPermissionHelper
 import com.example.util.PersianDownloadBrowserLauncher
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -267,7 +267,7 @@ fun SongHistoryScreen(
                             SystemSetupWizardCard(
                                 uiState = uiState,
                                 onRequestAddTile = {
-                                    OneUiPermissionHelper.requestAddQuickSettingsTile(context) { outcome ->
+                                    SystemPermissionHelper.requestAddQuickSettingsTile(context) { outcome ->
                                         when (outcome) {
                                             AddedTileOutcome.ADDED,
                                             AddedTileOutcome.ALREADY_ADDED -> {
@@ -290,11 +290,11 @@ fun SongHistoryScreen(
                                     }
                                 },
                                 onOpenAppInfoForRestrictedSettings = {
-                                    OneUiPermissionHelper.openAppDetailsSettings(context)
+                                    SystemPermissionHelper.openAppDetailsSettings(context)
                                 },
                                 onOpenAccessibilitySettings = {
                                     viewModel.markVisitedAccessibilitySettings()
-                                    OneUiPermissionHelper.openAccessibilitySettings(context)
+                                    SystemPermissionHelper.openAccessibilitySettings(context)
                                 },
                                 onRequestNotificationPermission = {
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -302,7 +302,7 @@ fun SongHistoryScreen(
                                     }
                                 },
                                 onRequestBatteryUnrestricted = {
-                                    OneUiPermissionHelper.requestIgnoreBatteryOptimizations(context)
+                                    SystemPermissionHelper.requestIgnoreBatteryOptimizations(context)
                                 },
                                 onDismissSetupCard = {
                                     viewModel.setSetupCardExpanded(false)
@@ -336,7 +336,7 @@ fun SongHistoryScreen(
                                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
                                         Text(
-                                            text = "Tap row to search \"دانلود\"",
+                                            text = "Tap row to search \"${PersianDownloadBrowserLauncher.PERSIAN_DOWNLOAD_SUFFIX}\"",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = tokens.textTertiary,
                                             maxLines = 1,
@@ -486,7 +486,7 @@ fun SongHistoryScreen(
                         item(key = "empty_library_state") {
                             MinimalistEmptyLibraryCard(
                                 onAddQuickSettingsTile = {
-                                    OneUiPermissionHelper.requestAddQuickSettingsTile(context) { _ ->
+                                    SystemPermissionHelper.requestAddQuickSettingsTile(context) { _ ->
                                         viewModel.markTileAdded()
                                     }
                                 },
@@ -700,19 +700,19 @@ fun CapturedSongRowCard(
         formatRelativeTimestamp(song.capturedAtEpochMillis)
     }
     val sourceLabel = remember(song.sourceAppPackage) {
-        OneUiPermissionHelper.formatSourceAppName(song.sourceAppPackage)
+        SystemPermissionHelper.formatSourceAppName(song.sourceAppPackage)
     }
     val subtitleLine = remember(song.displayArtist, relativeTime, sourceLabel, song.captureCount) {
         buildString {
             append(song.displayArtist)
-            append(" • ")
+            append(" \u2022 ")
             append(relativeTime)
             if (!song.sourceAppPackage.isNullOrBlank()) {
-                append(" • ")
+                append(" \u2022 ")
                 append(sourceLabel)
             }
             if (song.captureCount > 1) {
-                append(" ×")
+                append(" \u00D7")
                 append(song.captureCount)
             }
         }
@@ -796,7 +796,7 @@ fun CapturedSongRowCard(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "↗",
+                    text = "\u2197",
                     style = MaterialTheme.typography.labelLarge.copy(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold
@@ -891,7 +891,7 @@ private fun SystemSetupWizardCard(
                 stepNumber = "2",
                 title = "Google Song Result Interceptor",
                 subtitle = if (health.isAccessibilityServiceEnabled) {
-                    "Active • Passively gated until tile is tapped"
+                    "Active \u2022 Passively gated until tile is tapped"
                 } else {
                     "Automates Circle to Search Music button & captures recognized song title"
                 },
@@ -950,7 +950,7 @@ private fun SystemSetupWizardCard(
                         if (showRestrictedGuide) {
                             Text(
                                 text = "1. Tap \"Open App Info\" below.\n" +
-                                    "2. Tap the 3-dot menu (⋮) in the top-right corner of the App Info screen.\n" +
+                                    "2. Tap the 3-dot menu (\u22EE) in the top-right corner of the App Info screen.\n" +
                                     "3. Tap \"Allow restricted settings\" and verify with Fingerprint/PIN, then tap \"Enable\" above.",
                                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
                                 color = tokens.textSecondary
@@ -996,7 +996,7 @@ private fun SystemSetupWizardCard(
                 stepNumber = "3",
                 title = "Heads-Up Confirmation Banner",
                 subtitle = if (health.isNotificationPermissionGranted) {
-                    "Enabled • Alerts you immediately when a song is saved"
+                    "Enabled \u2022 Alerts you immediately when a song is saved"
                 } else {
                     "Required on Android 13+ to show the 'Song Saved' confirmation banner"
                 },
@@ -1012,7 +1012,7 @@ private fun SystemSetupWizardCard(
                 stepNumber = "4",
                 title = "Background Battery Protection (Unrestricted)",
                 subtitle = if (health.isBatteryOptimizationIgnored) {
-                    "Unrestricted • Protected from background service restrictions"
+                    "Unrestricted \u2022 Protected from background service restrictions"
                 } else {
                     "Prevents the system from restricting the tile or interceptor in the background"
                 },
@@ -1255,7 +1255,7 @@ private fun SongActionContextSheet(
                 color = tokens.textPrimary
             )
             Text(
-                text = "${song.displayArtist} • Raw: \"${song.fullRawTitle}\"",
+                text = "${song.displayArtist} \u2022 Raw: \"${song.fullRawTitle}\"",
                 style = MaterialTheme.typography.bodyMedium,
                 color = tokens.textSecondary
             )

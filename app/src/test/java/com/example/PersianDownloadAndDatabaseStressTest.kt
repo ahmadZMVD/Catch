@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -45,13 +46,29 @@ class PersianDownloadAndDatabaseStressTest {
     }
 
     @Test
-    fun `persian download browser launcher appends exact دانلود suffix and URL-encodes special characters`() {
+    fun `persian download browser launcher appends exact Persian download suffix and URL-encodes special characters`() {
+        val expectedSuffix = "\u062F\u0627\u0646\u0644\u0648\u062F"
+        assertEquals(expectedSuffix, PersianDownloadBrowserLauncher.PERSIAN_DOWNLOAD_SUFFIX)
+        assertEquals(6, PersianDownloadBrowserLauncher.PERSIAN_DOWNLOAD_SUFFIX.length)
+        assertEquals(
+            listOf(0x062F, 0x0627, 0x0646, 0x0644, 0x0648, 0x062F),
+            PersianDownloadBrowserLauncher.PERSIAN_DOWNLOAD_SUFFIX.map { it.code }
+        )
+        assertFalse(PersianDownloadBrowserLauncher.PERSIAN_DOWNLOAD_SUFFIX.contains('\u00D8'))
+        assertFalse(PersianDownloadBrowserLauncher.PERSIAN_DOWNLOAD_SUFFIX.contains('\u00D9'))
+        assertEquals(
+            "%D8%AF%D8%A7%D9%86%D9%84%D9%88%D8%AF",
+            PersianDownloadBrowserLauncher.urlEncodeUtf8(PersianDownloadBrowserLauncher.PERSIAN_DOWNLOAD_SUFFIX)
+        )
+
         val cases = listOf(
-            "Blinding Lights The Weeknd" to "Blinding Lights The Weeknd دانلود",
-            "گوهر کمیاب محسن چاوشی" to "گوهر کمیاب محسن چاوشی دانلود",
-            "Creepin' (feat. 21 Savage & The Weeknd) #1?" to "Creepin' (feat. 21 Savage & The Weeknd) #1? دانلود",
-            "봄날 BTS" to "봄날 BTS دانلود",
-            "تملي معاك عمرو دياب" to "تملي معاك عمرو دياب دانلود"
+            "Blinding Lights The Weeknd" to "Blinding Lights The Weeknd $expectedSuffix",
+            "\u06AF\u0648\u0647\u0631 \u06A9\u0645\u06CC\u0627\u0628 \u0645\u062D\u0633\u0646 \u0686\u0627\u0648\u0634\u06CC" to
+                "\u06AF\u0648\u0647\u0631 \u06A9\u0645\u06CC\u0627\u0628 \u0645\u062D\u0633\u0646 \u0686\u0627\u0648\u0634\u06CC $expectedSuffix",
+            "Creepin' (feat. 21 Savage & The Weeknd) #1?" to "Creepin' (feat. 21 Savage & The Weeknd) #1? $expectedSuffix",
+            "\uBC24\uB0A0 BTS" to "\uBC24\uB0A0 BTS $expectedSuffix",
+            "\u062A\u0645\u0644\u064A \u0645\u0639\u0627\u0643 \u0639\u0645\u0631\u0648 \u062F\u064A\u0627\u0628" to
+                "\u062A\u0645\u0644\u064A \u0645\u0639\u0627\u0643 \u0639\u0645\u0631\u0648 \u062F\u064A\u0627\u0628 $expectedSuffix"
         )
 
         for ((raw, expectedQuery) in cases) {
@@ -118,7 +135,7 @@ class PersianDownloadAndDatabaseStressTest {
         assertTrue(jsonBackup.contains("Starboy"))
         assertTrue(csvBackup.contains("\"Starboy\",\"The Weeknd\""))
         assertTrue(txtBackup.contains("Starboy - The Weeknd"))
-        assertTrue(txtBackup.contains("دانلود"))
+        assertTrue(txtBackup.contains(PersianDownloadBrowserLauncher.PERSIAN_DOWNLOAD_SUFFIX))
 
         repository.clearAllHistory()
         assertEquals(0, repository.allSongsFlow.first().size)

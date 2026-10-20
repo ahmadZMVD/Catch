@@ -12,7 +12,7 @@ import com.example.R
 import com.example.domain.interception.InterceptionPhase
 import com.example.domain.interception.InterceptionSessionState
 import com.example.domain.interception.InterceptionStateMachine
-import com.example.util.OneUiPermissionHelper
+import com.example.util.SystemPermissionHelper
 import com.example.util.PlatformCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -103,7 +103,7 @@ class SongCatchTileService : TileService() {
             null
         } ?: return
 
-        val isA11yReady = OneUiPermissionHelper.isAccessibilityServiceEnabled(applicationContext) ||
+        val isA11yReady = SystemPermissionHelper.isAccessibilityServiceEnabled(applicationContext) ||
             CatchAccessibilityService.instance != null ||
             CircleToSearchInternalAudioEngine.sharedInstance.platformBridge != null
 

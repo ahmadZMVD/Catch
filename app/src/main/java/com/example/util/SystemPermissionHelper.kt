@@ -36,7 +36,7 @@ data class SystemHealthStatus(
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 }
 
-object OneUiPermissionHelper {
+object SystemPermissionHelper {
 
     const val GOOGLE_QSB_PACKAGE = "com.google.android.googlequicksearchbox"
 
@@ -96,7 +96,7 @@ object OneUiPermissionHelper {
 
     /**
      * Opens App Info so the user can allow restricted settings on Android 13+ or configure
-     * unrestricted background battery usage across OEMs.
+     * unrestricted background battery usage.
      */
     fun openAppDetailsSettings(context: Context) {
         try {

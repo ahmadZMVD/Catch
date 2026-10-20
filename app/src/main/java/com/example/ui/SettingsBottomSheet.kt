@@ -475,7 +475,7 @@ fun SettingsBottomSheet(
                             onValueChange = { importJsonInput = it },
                             placeholder = {
                                 Text(
-                                    "Paste JSON backup array or object here…",
+                                    "Paste JSON backup array or object here...",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = tokens.textTertiary
                                 )

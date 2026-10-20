@@ -405,13 +405,13 @@ class GoogleMusicAccessibilityService :
                 combinedLower.contains("identify song") ||
                 combinedLower.contains("identify music") ||
                 combinedLower.contains("music search") ||
-                combinedLower.contains("جستجوی آهنگ") ||
+                combinedLower.contains("\u062C\u0633\u062A\u062C\u0648\u06CC \u0622\u0647\u0646\u06AF") ||
                 combinedLower == "music" ||
                 combinedLower == "song" ||
                 combinedLower == "hum" ||
                 combinedLower == "audio" ||
-                combinedLower == "آهنگ" ||
-                combinedLower == "موزیک" ||
+                combinedLower == "\u0622\u0647\u0646\u06AF" ||
+                combinedLower == "\u0645\u0648\u0632\u06CC\u06A9" ||
                 viewId.contains("music", ignoreCase = true) ||
                 viewId.contains("song", ignoreCase = true) ||
                 viewId.contains("audio", ignoreCase = true) ||

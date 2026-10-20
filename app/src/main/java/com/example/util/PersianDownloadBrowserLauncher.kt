@@ -12,11 +12,13 @@ import java.nio.charset.StandardCharsets
 
 /**
  * Formats and launches browser download searches using the query pattern:
- * `[Song Title] [Artist Name] دانلود`
+ * `[Song Title] [Artist Name] \u062F\u0627\u0646\u0644\u0648\u062F`
  */
 object PersianDownloadBrowserLauncher {
 
-    const val PERSIAN_DOWNLOAD_SUFFIX = "دانلود"
+    // Unicode escape for Persian download keyword (U+062F U+0627 U+0646 U+0644 U+0648 U+062F)
+    // to prevent UTF-8/Latin-1 mojibake across source control bridges.
+    const val PERSIAN_DOWNLOAD_SUFFIX = "\u062F\u0627\u0646\u0644\u0648\u062F"
     private const val GOOGLE_SEARCH_BASE_URL = "https://www.google.com/search?q="
     private const val YOUTUBE_SEARCH_BASE_URL = "https://www.youtube.com/results?search_query="
     private const val SPOTIFY_SEARCH_BASE_URL = "https://open.spotify.com/search/"

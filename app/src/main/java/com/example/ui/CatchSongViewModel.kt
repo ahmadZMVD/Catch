@@ -17,7 +17,7 @@ import com.example.domain.interception.InterceptionStateMachine
 import com.example.domain.interception.ParsedNodeSnapshot
 import com.example.domain.interception.TreeSnapshotRecord
 import com.example.service.CircleToSearchInternalAudioEngine
-import com.example.util.OneUiPermissionHelper
+import com.example.util.SystemPermissionHelper
 import com.example.util.SystemHealthStatus
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -79,7 +79,7 @@ class CatchSongViewModel(
         preferencesRepository.preferencesFlow,
         healthRefreshTrigger
     ) { prefs, _ ->
-        OneUiPermissionHelper.evaluateSystemHealth(
+        SystemPermissionHelper.evaluateSystemHealth(
             context = appContext,
             isTileAddedFlag = prefs.isTileAddedToQuickSettings,
             hasVisitedAccessibilityFlag = prefs.hasVisitedAccessibilitySettings
@@ -143,7 +143,7 @@ class CatchSongViewModel(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = run {
-            val initialHealth = OneUiPermissionHelper.evaluateSystemHealth(appContext)
+            val initialHealth = SystemPermissionHelper.evaluateSystemHealth(appContext)
             CatchSongUiState(
                 healthStatus = initialHealth,
                 isSetupCardExpanded = !initialHealth.isCoreReady
@@ -247,7 +247,7 @@ class CatchSongViewModel(
             Triple("Blinding Lights", "The Weeknd", "com.instagram.android"),
             Triple("Midnight City", "M83", "org.telegram.messenger"),
             Triple("Starboy (feat. Daft Punk)", "The Weeknd", "com.instagram.android"),
-            Triple("گوهر کمیاب", "محسن چاوشی", "org.telegram.messenger"),
+            Triple("\u06AF\u0648\u0647\u0631 \u06A9\u0645\u06CC\u0627\u0628", "\u0645\u062D\u0633\u0646 \u0686\u0627\u0648\u0634\u06CC", "org.telegram.messenger"),
             Triple("Veridis Quo", "Daft Punk", "com.google.android.youtube")
         )
         val pick = sampleSongs[(System.currentTimeMillis() % sampleSongs.size).toInt().coerceAtLeast(0)]

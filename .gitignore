@@ -1,6 +1,7 @@
 *.iml
 .gradle
 .kotlin
+.build-outputs
 /local.properties
 /.idea/caches
 /.idea/libraries
@@ -11,8 +12,10 @@
 .DS_Store
 /build
 /captures
+/dist
 .externalNativeBuild
 .cxx
 local.properties
 .env
 debug.keystore
+my-upload-key.jks

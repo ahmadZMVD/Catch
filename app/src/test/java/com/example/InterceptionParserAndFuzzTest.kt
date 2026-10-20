@@ -41,17 +41,19 @@ class InterceptionParserAndFuzzTest {
 
     @Test
     fun `tier 2 - extracts Persian RTL and English songs from byline without resource IDs`() {
+        val expectedTitle = "\u06AF\u0648\u0647\u0631 \u06A9\u0645\u06CC\u0627\u0628"
+        val expectedArtist = "\u0645\u062D\u0633\u0646 \u0686\u0627\u0648\u0634\u06CC"
         val persianTree = ParsedNodeSnapshot(
             packageName = GoogleMusicNodeParser.GOOGLE_QSB_PACKAGE,
             children = listOf(
-                ParsedNodeSnapshot(text = "گوهر کمیاب"),
-                ParsedNodeSnapshot(text = "آهنگ از محسن چاوشی")
+                ParsedNodeSnapshot(text = expectedTitle),
+                ParsedNodeSnapshot(text = "\u0622\u0647\u0646\u06AF \u0627\u0632 $expectedArtist")
             )
         )
         val persianOutcome = GoogleMusicNodeParser.parseTree(persianTree)
         assertTrue(persianOutcome is NodeParseOutcome.SongMatched)
-        assertEquals("گوهر کمیاب", (persianOutcome as NodeParseOutcome.SongMatched).candidate.songTitle)
-        assertEquals("محسن چاوشی", persianOutcome.candidate.artistName)
+        assertEquals(expectedTitle, (persianOutcome as NodeParseOutcome.SongMatched).candidate.songTitle)
+        assertEquals(expectedArtist, persianOutcome.candidate.artistName)
     }
 
     @Test
@@ -102,7 +104,7 @@ class InterceptionParserAndFuzzTest {
             "Translate",
             "Homework",
             "Share",
-            "در حال گوش دادن..."
+            "\u062F\u0631 \u062D\u0627\u0644 \u06AF\u0648\u0634 \u062F\u0627\u062F\u0646..."
         )
         val failurePrompts = listOf(
             "Couldn't find a match",
@@ -111,20 +113,19 @@ class InterceptionParserAndFuzzTest {
             "Try again",
             "No match",
             "Didn't catch that",
-            "نتیجه‌ای یافت نشد"
+            "\u0646\u062A\u06CC\u062C\u0647\u200C\u0627\u06CC \u06CC\u0627\u0641\u062A \u0646\u0634\u062F"
         )
         val songPairs = listOf(
             "Blinding Lights" to "The Weeknd",
             "Starboy (feat. Daft Punk)" to "The Weeknd",
-            "گوهر کمیاب" to "محسن چاوشی",
-            "تملي معاك" to "عمرو دياب",
-            "봄날 (Spring Day)" to "BTS",
+            "\u06AF\u0648\u0647\u0631 \u06A9\u0645\u06CC\u0627\u0628" to "\u0645\u062D\u0633\u0646 \u0686\u0627\u0648\u0634\u06CC",
+            "\u062A\u0645\u0644\u064A \u0645\u0639\u0627\u0643" to "\u0639\u0645\u0631\u0648 \u062F\u064A\u0627\u0628",
+            "\uBC24\uB0A0 (Spring Day)" to "BTS",
             "Creepin' (with The Weeknd & 21 Savage)" to "Metro Boomin",
             "Veridis Quo" to "Daft Punk",
-            "با من صنما" to "همایون شجریان"
+            "\u0628\u0627 \u0645\u0646 \u0635\u0646\u0645\u0627" to "\u0647\u0645\u0627\u06CC\u0648\u0646 \u0634\u062C\u0631\u06CC\u0627\u0646"
         )
 
-        // Verify Persian download URL encoding (`https://www.google.com/search?q=<Song>+<Artist>+%D8%AF%D8%A7%D9%86%D9%84%D9%88%D8%AF`)
         val sampleUrl = PersianDownloadBrowserLauncher.buildGoogleDownloadSearchUrl("Blinding Lights The Weeknd")
         assertEquals(
             "https://www.google.com/search?q=Blinding+Lights+The+Weeknd+%D8%AF%D8%A7%D9%86%D9%84%D9%88%D8%AF",
@@ -141,7 +142,7 @@ class InterceptionParserAndFuzzTest {
                 encodedUrl.removePrefix("https://www.google.com/search?q="),
                 StandardCharsets.UTF_8.name()
             )
-            assertEquals("$rawBase دانلود", decoded)
+            assertEquals("$rawBase ${PersianDownloadBrowserLauncher.PERSIAN_DOWNLOAD_SUFFIX}", decoded)
         }
 
         var totalVerified = 0
@@ -150,7 +151,6 @@ class InterceptionParserAndFuzzTest {
         for (i in 0 until 500) {
             when (i % 5) {
                 0 -> {
-                    // Archetype 0: Transient listening / Chrome pills ("Listening...", "Google", "Search", "Translate", "Try again" during grace period)
                     val prompt = transientPrompts[i % transientPrompts.size]
                     val tree = ParsedNodeSnapshot(
                         packageName = GoogleMusicNodeParser.GOOGLE_QSB_PACKAGE,
@@ -164,8 +164,6 @@ class InterceptionParserAndFuzzTest {
                             ParsedNodeSnapshot(text = "0:0${i % 9} / 0:15")
                         )
                     )
-                    // During the listening grace period (`allowFailureDetection = false`), even if "Try again" is present,
-                    // it MUST return TransientListeningOrEmpty and 0 false positives!
                     val outcomeDuringGrace = GoogleMusicNodeParser.parseTree(
                         root = tree,
                         allowCircleToSearchButtonDetection = false,
@@ -180,7 +178,6 @@ class InterceptionParserAndFuzzTest {
                 }
 
                 1 -> {
-                    // Archetype 1: Explicit Failure hierarchy after 5,500ms ("Couldn't find a match", "No match found", "Try again")
                     val failText = failurePrompts[i % failurePrompts.size]
                     val tree = ParsedNodeSnapshot(
                         packageName = GoogleMusicNodeParser.GOOGLE_QSB_PACKAGE,
@@ -202,7 +199,6 @@ class InterceptionParserAndFuzzTest {
                 }
 
                 2 -> {
-                    // Archetype 2: Circle to Search overlay variants (with ID, with label, or stripped-ID positional)
                     val variant = (i / 5) % 3
                     val tree = when (variant) {
                         0 -> ParsedNodeSnapshot(
@@ -251,7 +247,6 @@ class InterceptionParserAndFuzzTest {
                 }
 
                 3 -> {
-                    // Archetype 3: Matched Song + Artist across Tier 1, Tier 2, and Tier 3 topologies
                     val (expectedTitle, expectedArtist) = songPairs[i % songPairs.size]
                     val topology = (i / 5) % 3
                     val tree = when (topology) {
@@ -294,7 +289,6 @@ class InterceptionParserAndFuzzTest {
                 }
 
                 4 -> {
-                    // Archetype 4: Deeply nested malformed / null-text / emoji / system noise trees
                     var cursor = ParsedNodeSnapshot(
                         packageName = GoogleMusicNodeParser.GOOGLE_QSB_PACKAGE,
                         text = if (rng.nextBoolean()) null else "   \n\t  "
@@ -303,7 +297,7 @@ class InterceptionParserAndFuzzTest {
                         cursor = ParsedNodeSnapshot(
                             packageName = GoogleMusicNodeParser.GOOGLE_QSB_PACKAGE,
                             className = "android.view.ViewGroup",
-                            text = if (depth % 3 == 0) "🎵" else null,
+                            text = if (depth % 3 == 0) "\uD83C\uDFB5" else null,
                             contentDescription = if (depth % 4 == 0) "Close" else null,
                             children = listOf(cursor)
                         )

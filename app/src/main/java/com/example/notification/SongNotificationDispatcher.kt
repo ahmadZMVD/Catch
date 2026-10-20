@@ -96,7 +96,7 @@ object SongNotificationDispatcher {
             .setContentText(formattedBody)
             .setStyle(
                 NotificationCompat.BigTextStyle()
-                    .bigText("$formattedBody\nTap \"Download (Search)\" to search \"$formattedBody دانلود\" in your browser.")
+                    .bigText("$formattedBody\nTap \"Download (Search)\" to search \"$formattedBody \u062F\u0627\u0646\u0644\u0648\u062F\" in your browser.")
             )
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_STATUS)

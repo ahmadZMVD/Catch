@@ -8,7 +8,7 @@ import com.example.util.PersianDownloadBrowserLauncher
 
 /**
  * Handles the "Download (Search)" action button directly from the confirmation notification banner,
- * launching `[Song Name] دانلود` in the user's default browser and dismissing the notification.
+ * launching `[Song Name] \u062F\u0627\u0646\u0644\u0648\u062F` in the user's default browser and dismissing the notification.
  */
 class NotificationActionReceiver : BroadcastReceiver() {
 

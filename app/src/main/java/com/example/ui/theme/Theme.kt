@@ -118,14 +118,3 @@ fun CatchSongBoneTheme(
     }
 }
 
-@Composable
-fun MyApplicationTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    @Suppress("UNUSED_PARAMETER") dynamicColor: Boolean = false,
-    content: @Composable () -> Unit
-) {
-    CatchSongBoneTheme(
-        themeMode = if (darkTheme) AppThemeMode.DARK_OBSIDIAN else AppThemeMode.LIGHT_BONE,
-        content = content
-    )
-}

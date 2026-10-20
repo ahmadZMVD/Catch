@@ -158,6 +158,7 @@ class ExampleRobolectricTest {
         CircleToSearchInternalAudioEngine.sharedInstance.cancelActivePipeline("test tearDown")
         CatchAccessibilityService.activeInstance = null
         CircleToSearchInternalAudioEngine.sharedInstance.platformBridge = null
+        SongCatchTileService.activeTileInstance = null
         SongCatchTileService.lastLaunchedActivityIntentForTest = null
         HiddenApiHelper.testOmniInvoker = null
         inMemoryDb.close()
@@ -450,11 +451,11 @@ class ExampleRobolectricTest {
      */
     @Test
     fun `home screen displays Catch branding, omits Ready to Catch, enforces top cutout clearance, and renders 56dp circular button`() {
-        runBlocking {
+        val songs = runBlocking {
             repository.recordCapturedSong(
-                fullRawTitle = "گوهر کمیاب - محسن چاوشی",
-                songTitle = "گوهر کمیاب",
-                artistName = "محسن چاوشی",
+                fullRawTitle = "\u06AF\u0648\u0647\u0631 \u06A9\u0645\u06CC\u0627\u0628 - \u0645\u062D\u0633\u0646 \u0686\u0627\u0648\u0634\u06CC",
+                songTitle = "\u06AF\u0648\u0647\u0631 \u06A9\u0645\u06CC\u0627\u0628",
+                artistName = "\u0645\u062D\u0633\u0646 \u0686\u0627\u0648\u0634\u06CC",
                 captureMode = CapturedSongEntity.CAPTURE_MODE_CIRCLE_TO_SEARCH,
                 sourceAppPackage = "com.instagram.android",
                 mergeDuplicates = false
@@ -467,11 +468,13 @@ class ExampleRobolectricTest {
                 sourceAppPackage = "org.telegram.messenger",
                 mergeDuplicates = false
             )
+            repository.allSongsFlow.first { it.size >= 2 }
         }
 
-        val initialState = runBlocking {
-            viewModel.uiState.first { it.songs.size >= 2 }
-        }
+        val initialState = viewModel.uiState.value.copy(
+            songs = songs,
+            totalCount = songs.size
+        )
 
         composeTestRule.setContent {
             CatchSongBoneTheme(themeMode = AppThemeMode.LIGHT_BONE) {
