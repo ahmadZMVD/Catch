@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Outer subtle Bone ring -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#33F9F6F0"
+        android:strokeWidth="1.5"
+        android:pathData="M54,54m-28,0a28,28 0,1 1,56 0a28,28 0,1 1,-56 0" />
+    <!-- Acoustic Waveform + Tuning Fork Bars in Warm Bone (#F9F6F0) -->
+    <path
+        android:fillColor="#F9F6F0"
+        android:pathData="M36,46 C37.65,46 39,47.35 39,49 L39,59 C39,60.65 37.65,62 36,62 C34.35,62 33,60.65 33,59 L33,49 C33,47.35 34.35,46 36,46 Z M45,38 C46.65,38 48,39.35 48,41 L48,67 C48,68.65 46.65,70 45,70 C43.35,70 42,68.65 42,67 L42,41 C42,39.35 43.35,38 45,38 Z M54,31 C55.65,31 57,32.35 57,34 L57,74 C57,75.65 55.65,77 54,77 C52.35,77 51,75.65 51,74 L51,34 C51,32.35 52.35,31 54,31 Z M63,40 C64.65,40 66,41.35 66,43 L66,65 C66,66.65 64.65,68 63,68 C61.35,68 60,66.65 60,65 L60,43 C60,41.35 61.35,40 63,40 Z" />
+    <!-- Active Listening Terracotta Pulse Bar & Dot (#C85A32) -->
+    <path
+        android:fillColor="#C85A32"
+        android:pathData="M72,47 C73.65,47 75,48.35 75,50 L75,58 C75,59.65 73.65,61 72,61 C70.35,61 69,59.65 69,58 L69,50 C69,48.35 70.35,47 72,47 Z" />
+    <path
+        android:fillColor="#C85A32"
+        android:pathData="M72,39m-3.5,0a3.5,3.5 0,1 1,7 0a3.5,3.5 0,1 1,-7 0" />
+</vector>

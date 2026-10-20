@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">Catch</string>
+    <string name="tile_label_catch_song">Catch</string>
+    <string name="tile_subtitle_ready">Tap to identify</string>
+    <string name="tile_subtitle_listening">Listening...</string>
+    <string name="tile_subtitle_setup">Setup required</string>
+
+    <string name="accessibility_service_label">Catch Interceptor</string>
+    <string name="accessibility_service_description">Automates Circle to Search internal audio recognition when triggered from the Catch Quick Settings Tile, saving the track to your library and closing the Google overlay automatically so your video never pauses.</string>
+
+    <string name="notification_channel_name">Captured Song Confirmations</string>
+    <string name="notification_channel_desc">High-priority banner alerts when a playing song is identified and saved to your library.</string>
+    <string name="notification_title_saved">Song Saved to Library</string>
+    <string name="notification_title_no_match">Could Not Identify Song</string>
+    <string name="notification_body_no_match">Google did not find a match. Ensure audio is playing clearly and try again.</string>
+    <string name="notification_action_download">Download (Search)</string>
+    <string name="notification_action_view_list">View List</string>
+
+    <string name="status_listening">Listening…</string>
+    <string name="status_action_needed">Setup Needed</string>
+    <string name="header_catch_now">Catch Now</string>
+    <string name="search_placeholder">Filter by title, artist, or source…</string>
+    <string name="empty_state_title">No Songs Captured Yet</string>
+    <string name="empty_state_subtitle">Pull down Quick Settings while watching a Reel, Story, or video and tap Catch. Recognized tracks are saved here automatically without pausing your video.</string>
+    <string name="action_add_qs_tile">Add Quick Settings Tile</string>
+    <string name="action_settings">Settings &amp; Diagnostics</string>
+</resources>

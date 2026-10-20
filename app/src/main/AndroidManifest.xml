@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Permissions for confirmation notifications, haptics, and background battery optimization exemption -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
+
+    <!-- Android 11+ (API 30+) package visibility declarations -->
+    <queries>
+        <package android:name="com.google.android.googlequicksearchbox" />
+        <package android:name="com.android.systemui" />
+        <package android:name="com.instagram.android" />
+        <package android:name="org.telegram.messenger" />
+        <package android:name="com.zhiliaoapp.musically" />
+        <package android:name="com.google.android.youtube" />
+        <package android:name="com.spotify.music" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
+    </queries>
+
+    <application
+        android:name=".CatchSongApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MyApplication">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.MyApplication">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
+            </intent-filter>
+        </activity>
+
+        <!-- Translucent fallback activity for Quick Settings tile shade collapse -->
+        <activity
+            android:name=".service.TileTriggerTrampolineActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:finishOnTaskLaunch="true"
+            android:launchMode="singleInstance"
+            android:noHistory="true"
+            android:stateNotNeeded="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <!-- Quick Settings Tile Service -->
+        <service
+            android:name=".service.SongCatchTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_qs_catch_song"
+            android:label="@string/tile_label_catch_song"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="false" />
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+
+        <!-- Scoped Accessibility Service for Circle to Search Internal Audio Automation & Result Interception -->
+        <service
+            android:name=".service.GoogleMusicAccessibilityService"
+            android:exported="false"
+            android:label="@string/accessibility_service_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
+        <!-- Notification Action Receiver for 1-Tap Persian Download Browser Launch from Banner -->
+        <receiver
+            android:name=".notification.NotificationActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.example.action.NOTIFICATION_DOWNLOAD_SONG" />
+            </intent-filter>
+        </receiver>
+
+    </application>
+
+</manifest>

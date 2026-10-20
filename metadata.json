@@ -1,0 +1,6 @@
+{
+  "name": "Catch",
+  "description": "Zero-interruption Circle to Search internal audio song catcher with Quick Settings Tile, Accessibility interception, Room library, and 1-tap Persian download search.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
