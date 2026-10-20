@@ -126,7 +126,7 @@ import kotlin.math.abs
 @Composable
 fun SongHistoryScreen(
     uiState: CatchSongUiState,
-    viewModel: CatchSongViewModel,
+    viewModel: CatchViewModel,
     simulatedTopCutoutInset: Dp = 0.dp,
     simulatedBottomNavInset: Dp = 0.dp
 ) {

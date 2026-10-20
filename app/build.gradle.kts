@@ -11,7 +11,7 @@ android {
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {
-    applicationId = "com.catchsong.app"
+    applicationId = "io.github.ahmadzmvd.catchapp"
     minSdk = 28
     targetSdk = 36
     versionCode = 1

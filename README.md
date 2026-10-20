@@ -33,7 +33,7 @@ When triggered, Catch collapses the Quick Settings panel using system accessibil
 
 ```text
 app/src/main/java/com/example/
-|-- CatchSongApplication.kt                  # Application graph wiring Room, DataStore, and state listeners
+|-- CatchApplication.kt                      # Application graph wiring Room, DataStore, and state listeners
 |-- MainActivity.kt                          # Edge-to-edge Compose host activity
 |-- data/
 |   |-- local/
@@ -59,7 +59,7 @@ app/src/main/java/com/example/
 |   |-- SongCatchTileService.kt              # Quick Settings TileService implementation
 |   \-- TileTriggerTrampolineActivity.kt     # Legacy fallback activity for shade collapse
 |-- ui/
-|   |-- CatchSongViewModel.kt                # MVVM state holder combining Room history and session telemetry
+|   |-- CatchViewModel.kt                    # MVVM state holder combining Room history and session telemetry
 |   |-- SettingsBottomSheet.kt               # Appearance, engine timeout, backup/restore, and tree inspector UI
 |   |-- SongHistoryScreen.kt                 # Main library screen, setup card, and bottom capture trigger
 |   \-- theme/

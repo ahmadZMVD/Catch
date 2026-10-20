@@ -36,13 +36,12 @@ import com.example.service.CatchAccessibilityService
 import com.example.service.CircleToSearchInternalAudioEngine
 import com.example.service.HiddenApiHelper
 import com.example.service.SongCatchTileService
-import com.example.ui.CatchSongViewModel
+import com.example.ui.CatchViewModel
 import com.example.ui.SongHistoryScreen
 import com.example.ui.theme.CatchSongBoneTheme
 import com.example.util.AddedTileOutcome
 import com.example.util.PlatformCompat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -50,7 +49,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -66,23 +64,23 @@ import org.robolectric.annotation.GraphicsMode
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [36], qualifiers = "w360dp-h780dp-xxxhdpi")
-class ExampleRobolectricTest {
+class PlatformCompatTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
 
-    private lateinit var app: CatchSongApplication
+    private lateinit var app: CatchApplication
     private lateinit var inMemoryDb: AppDatabase
     private lateinit var repository: SongRepository
     private lateinit var prefsRepository: UserPreferencesRepository
     private lateinit var stateMachine: InterceptionStateMachine
-    private lateinit var viewModel: CatchSongViewModel
+    private lateinit var viewModel: CatchViewModel
 
     /**
-     * Foreground video player activity (`FakeInstagramReelActivity`) that records whether `onPause()`
+     * Foreground video player activity that records whether `onPause()`
      * is ever invoked when the user taps the Quick Settings Tile.
      */
-    class FakeInstagramReelActivity : Activity() {
+    class ForegroundVideoPlaybackTestActivity : Activity() {
         var onPauseCallCount: Int = 0
             private set
         var isVideoPlaying: Boolean = false
@@ -145,7 +143,7 @@ class ExampleRobolectricTest {
             override fun onRecognitionFailedOrTimedOut(reason: String, wasExplicitFailure: Boolean) {}
         }
 
-        viewModel = CatchSongViewModel(
+        viewModel = CatchViewModel(
             appContext = app,
             songRepository = repository,
             preferencesRepository = prefsRepository,
@@ -166,29 +164,29 @@ class ExampleRobolectricTest {
 
     /**
      * Zero-pause Quick Settings tile verification:
-     * Hosts `FakeInstagramReelActivity` in the `RESUMED` state, triggers `SongCatchTileService.onClick()`,
+     * Hosts [ForegroundVideoPlaybackTestActivity] in the `RESUMED` state, triggers `SongCatchTileService.onClick()`,
      * and asserts:
      * 1. `Shadows.shadowOf(application).nextStartedActivity` is `null` (zero Activity launch).
-     * 2. `FakeInstagramReelActivity.onPauseCallCount == 0` across the entire 10-second capture lifecycle.
+     * 2. `ForegroundVideoPlaybackTestActivity.onPauseCallCount == 0` across the entire 10-second capture lifecycle.
      * 3. `GLOBAL_ACTION_DISMISS_NOTIFICATION_SHADE` (constant `15`) is invoked to collapse the shade.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `tile click uses GLOBAL_ACTION_DISMISS_NOTIFICATION_SHADE and never pauses foreground video activity over 10s lifecycle`() = runTest {
-        val reelController = Robolectric.buildActivity(FakeInstagramReelActivity::class.java)
+        val videoController = Robolectric.buildActivity(ForegroundVideoPlaybackTestActivity::class.java)
             .create()
             .start()
             .resume()
             .visible()
-        val reelActivity = reelController.get()
+        val videoActivity = videoController.get()
 
         val shadowApp = Shadows.shadowOf(app)
         while (shadowApp.nextStartedActivity != null) {
             // Drain initial setup intent
         }
 
-        assertEquals(0, reelActivity.onPauseCallCount)
-        assertTrue(reelActivity.isVideoPlaying)
+        assertEquals(0, videoActivity.onPauseCallCount)
+        assertTrue(videoActivity.isVideoPlaying)
 
         var globalActionDismissShadeCount = 0
         var omniTriggeredCount = 0
@@ -337,7 +335,6 @@ class ExampleRobolectricTest {
         )
         assertNull(SongCatchTileService.lastLaunchedActivityIntentForTest)
 
-        // Cancel the real-dispatcher sharedInstance job before driving the deterministic virtual-clock testEngine
         CircleToSearchInternalAudioEngine.sharedInstance.cancelActivePipeline("switch to virtual clock")
 
         testEngine.requestStartFromTile(sourceAppPackage = "com.instagram.android")
@@ -347,9 +344,9 @@ class ExampleRobolectricTest {
         assertEquals(
             "Foreground video activity MUST NEVER receive onPause() over the entire 10-second capture lifecycle",
             0,
-            reelActivity.onPauseCallCount
+            videoActivity.onPauseCallCount
         )
-        assertTrue("Foreground video must remain playing", reelActivity.isVideoPlaying)
+        assertTrue("Foreground video must remain playing", videoActivity.isVideoPlaying)
         assertNull("No Activity may be started at any point during the 10-second lifecycle", shadowApp.nextStartedActivity)
 
         assertTrue(
@@ -452,7 +449,7 @@ class ExampleRobolectricTest {
     @Test
     fun `home screen displays Catch branding, omits Ready to Catch, enforces top cutout clearance, and renders 56dp circular button`() {
         val songs = runBlocking {
-            repository.recordCapturedSong(
+            val s1 = repository.recordCapturedSong(
                 fullRawTitle = "\u06AF\u0648\u0647\u0631 \u06A9\u0645\u06CC\u0627\u0628 - \u0645\u062D\u0633\u0646 \u0686\u0627\u0648\u0634\u06CC",
                 songTitle = "\u06AF\u0648\u0647\u0631 \u06A9\u0645\u06CC\u0627\u0628",
                 artistName = "\u0645\u062D\u0633\u0646 \u0686\u0627\u0648\u0634\u06CC",
@@ -460,7 +457,7 @@ class ExampleRobolectricTest {
                 sourceAppPackage = "com.instagram.android",
                 mergeDuplicates = false
             )
-            repository.recordCapturedSong(
+            val s2 = repository.recordCapturedSong(
                 fullRawTitle = "Blinding Lights - The Weeknd",
                 songTitle = "Blinding Lights",
                 artistName = "The Weeknd",
@@ -468,7 +465,7 @@ class ExampleRobolectricTest {
                 sourceAppPackage = "org.telegram.messenger",
                 mergeDuplicates = false
             )
-            repository.allSongsFlow.first { it.size >= 2 }
+            listOf(s2, s1)
         }
 
         val initialState = viewModel.uiState.value.copy(
@@ -540,7 +537,7 @@ class ExampleRobolectricTest {
      * Multi-form-factor viewport (`411dp x 891dp` @ `1.3x` font scale and `800dp x 1280dp` tablet) verification.
      */
     @Test
-    fun `responsive layout adapts cleanly across 411x891 at 1_3x font scale and 800x1280 tablet viewports`(): Unit = runBlocking {
+    fun `responsive layout adapts cleanly across 411x891 at 1_3x font scale and 800x1280 tablet viewports`() {
         val state = viewModel.uiState.value
         composeTestRule.setContent {
             CompositionLocalProvider(

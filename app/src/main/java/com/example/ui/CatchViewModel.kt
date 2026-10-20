@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.CatchSongApplication
+import com.example.CatchApplication
 import com.example.data.local.CapturedSongEntity
 import com.example.data.preferences.AppThemeMode
 import com.example.data.preferences.UserPreferencesRepository
@@ -17,8 +17,8 @@ import com.example.domain.interception.InterceptionStateMachine
 import com.example.domain.interception.ParsedNodeSnapshot
 import com.example.domain.interception.TreeSnapshotRecord
 import com.example.service.CircleToSearchInternalAudioEngine
-import com.example.util.SystemPermissionHelper
 import com.example.util.SystemHealthStatus
+import com.example.util.SystemPermissionHelper
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -47,7 +47,7 @@ data class CatchSongUiState(
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class CatchSongViewModel(
+class CatchViewModel(
     private val appContext: Context,
     private val songRepository: SongRepository,
     private val preferencesRepository: UserPreferencesRepository,
@@ -359,11 +359,11 @@ class CatchSongViewModel(
     )
 
     companion object {
-        fun provideFactory(application: CatchSongApplication): ViewModelProvider.Factory {
+        fun provideFactory(application: CatchApplication): ViewModelProvider.Factory {
             return object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return CatchSongViewModel(
+                    return CatchViewModel(
                         appContext = application.applicationContext,
                         songRepository = application.songRepository,
                         preferencesRepository = application.preferencesRepository

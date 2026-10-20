@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
  * Application singleton coordinating the Room Database, DataStore Preferences,
  * InterceptionStateMachine, Confirmation Notifications, and Accessibility Service callbacks.
  */
-class CatchSongApplication : Application() {
+class CatchApplication : Application() {
 
     val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -91,7 +91,7 @@ class CatchSongApplication : Application() {
                         mergeDuplicates = mergeDuplicateCapturesCached
                     )
                     SongNotificationDispatcher.dispatchCapturedSongNotification(
-                        context = this@CatchSongApplication,
+                        context = this@CatchApplication,
                         song = savedEntity
                     )
                 }
@@ -107,14 +107,14 @@ class CatchSongApplication : Application() {
             ) {
                 if (wasExplicitFailure) {
                     SongNotificationDispatcher.dispatchNoMatchNotification(
-                        context = this@CatchSongApplication,
+                        context = this@CatchApplication,
                         reason = reason
                     )
                 }
             }
 
             override fun onSessionResetToIdle() {
-                com.example.service.SongCatchTileService.requestTileSync(this@CatchSongApplication)
+                com.example.service.SongCatchTileService.requestTileSync(this@CatchApplication)
             }
         }
     }

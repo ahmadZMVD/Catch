@@ -8,14 +8,14 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.ui.CatchSongViewModel
+import com.example.ui.CatchViewModel
 import com.example.ui.SongHistoryScreen
 import com.example.ui.theme.CatchSongBoneTheme
 
 class MainActivity : ComponentActivity() {
 
-    private val viewModel: CatchSongViewModel by viewModels {
-        CatchSongViewModel.provideFactory(application as CatchSongApplication)
+    private val viewModel: CatchViewModel by viewModels {
+        CatchViewModel.provideFactory(application as CatchApplication)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

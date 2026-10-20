@@ -9,7 +9,7 @@ import android.os.Build
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
-import com.example.CatchSongApplication
+import com.example.CatchApplication
 import com.example.domain.interception.GoogleMusicNodeParser
 import com.example.domain.interception.InterceptionStateMachine
 import com.example.domain.interception.ParsedNodeSnapshot
@@ -111,7 +111,7 @@ class GoogleMusicAccessibilityService :
             lastNonGoogleForegroundPackage = eventPkg
         }
 
-        val app = applicationContext as? CatchSongApplication
+        val app = applicationContext as? CatchApplication
         val recordSnapshots = app?.isTreeDebuggerEnabledCached ?: true
 
         try {

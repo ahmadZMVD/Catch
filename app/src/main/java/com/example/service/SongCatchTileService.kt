@@ -6,7 +6,7 @@ import android.content.Intent
 import android.os.Build
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
-import com.example.CatchSongApplication
+import com.example.CatchApplication
 import com.example.MainActivity
 import com.example.R
 import com.example.domain.interception.InterceptionPhase
@@ -46,7 +46,7 @@ class SongCatchTileService : TileService() {
     override fun onTileAdded() {
         super.onTileAdded()
         isTileListeningInSystem = true
-        (applicationContext as? CatchSongApplication)?.let { app ->
+        (applicationContext as? CatchApplication)?.let { app ->
             serviceScope.launch {
                 app.preferencesRepository.setTileAddedToQuickSettings(true)
             }
