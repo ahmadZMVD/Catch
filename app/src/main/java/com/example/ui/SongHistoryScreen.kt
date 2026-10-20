@@ -47,28 +47,19 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.outlined.AddCircleOutline
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material.icons.outlined.ExpandLess
-import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.MusicNote
-import androidx.compose.material.icons.outlined.PlayCircleOutline
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -94,7 +85,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -104,10 +94,16 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.R
 import com.example.data.local.CapturedSongEntity
+import com.example.ui.components.LegacyPrototypeWarningCard
+import com.example.ui.components.MinimalistEmptyLibraryCard
+import com.example.ui.components.SongActionContextSheet
+import com.example.ui.components.SystemSetupWizardCard
 import com.example.ui.theme.LocalBoneTokens
 import com.example.util.AddedTileOutcome
-import com.example.util.SystemPermissionHelper
 import com.example.util.PersianDownloadBrowserLauncher
+import com.example.util.RestrictedSettingsSessionUnlocker
+import com.example.util.SessionUnlockOutcome
+import com.example.util.SystemPermissionHelper
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -120,7 +116,8 @@ import kotlin.math.abs
  * - Top bar contains:
  *   - Left: Title **`Catch`** (`24.sp`, `FontWeight.Bold`).
  *   - Right: Settings icon button (`Icons.Outlined.Settings`).
- * - Bottom bar anchors the `56.dp` circular `"Catch Now"` action above `WindowInsets.navigationBars`.
+ * - Bottom bar anchors the `56.dp` circular `"Catch Now"` action above `WindowInsets.navigationBars`
+ *   only when Accessibility is enabled, ensuring zero overlap with the Setup Wizard card.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -160,7 +157,6 @@ fun SongHistoryScreen(
             .fillMaxSize()
             .background(tokens.backgroundPrimary)
     ) {
-        // Proportional layout geometry
         val horizontalMargin = (maxWidth * 0.055f).coerceIn(20.dp, 24.dp)
         val extraTopSafetyClearance = (maxHeight * 0.022f).coerceAtLeast(20.dp)
         val bottomSafetyClearance = (maxHeight * 0.025f).coerceAtLeast(24.dp)
@@ -252,7 +248,16 @@ fun SongHistoryScreen(
                     ),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // System Permissions & Setup Card
+                    if (uiState.healthStatus.isLegacyPrototypeInstalled) {
+                        item(key = "legacy_prototype_warning") {
+                            LegacyPrototypeWarningCard(
+                                onUninstallLegacyPrototype = {
+                                    SystemPermissionHelper.promptUninstallLegacyPrototype(context)
+                                }
+                            )
+                        }
+                    }
+
                     item(key = "setup_wizard_card") {
                         AnimatedVisibility(
                             visible = uiState.isSetupCardExpanded || !uiState.healthStatus.isCoreReady,
@@ -290,11 +295,23 @@ fun SongHistoryScreen(
                                     }
                                 },
                                 onOpenAppInfoForRestrictedSettings = {
+                                    viewModel.markVisitedAppInfoSettings()
                                     SystemPermissionHelper.openAppDetailsSettings(context)
                                 },
                                 onOpenAccessibilitySettings = {
                                     viewModel.markVisitedAccessibilitySettings()
                                     SystemPermissionHelper.openAccessibilitySettings(context)
+                                },
+                                onAutoUnlockViaStoreSession = {
+                                    val outcome = RestrictedSettingsSessionUnlocker.triggerStoreSessionSelfUpgrade(context)
+                                    val msg = when (outcome) {
+                                        SessionUnlockOutcome.SESSION_COMMITTED ->
+                                            "Confirm the update prompt, then enable Catch in Accessibility."
+                                        SessionUnlockOutcome.SOURCE_APK_UNAVAILABLE,
+                                        SessionUnlockOutcome.FAILED ->
+                                            "Store session unavailable on this ROM; follow Steps 2A -> 2B -> 2C below."
+                                    }
+                                    Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
                                 },
                                 onRequestNotificationPermission = {
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -498,7 +515,6 @@ fun SongHistoryScreen(
                     }
                 }
 
-                // Undo Delete Banner (positioned above the 56.dp circular button)
                 if (uiState.lastDeletedSong != null) {
                     Box(
                         modifier = Modifier
@@ -541,8 +557,12 @@ fun SongHistoryScreen(
                     }
                 }
 
-                // Compact 56.dp Circular "Catch Now" Button anchored at the bottom above Navigation Bar
-                Box(
+                // Compact 56.dp Circular "Catch Now" Button anchored at the bottom above Navigation Bar.
+                // Hidden while Accessibility is not yet enabled so it never overlaps the Setup Wizard card.
+                AnimatedVisibility(
+                    visible = uiState.healthStatus.isAccessibilityServiceEnabled,
+                    enter = fadeIn(),
+                    exit = fadeOut(),
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .windowInsetsPadding(WindowInsets.navigationBars)
@@ -802,593 +822,6 @@ fun CapturedSongRowCard(
                         fontWeight = FontWeight.SemiBold
                     ),
                     color = tokens.textPrimary
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun SystemSetupWizardCard(
-    uiState: CatchSongUiState,
-    onRequestAddTile: () -> Unit,
-    onOpenAppInfoForRestrictedSettings: () -> Unit,
-    onOpenAccessibilitySettings: () -> Unit,
-    onRequestNotificationPermission: () -> Unit,
-    onRequestBatteryUnrestricted: () -> Unit,
-    onDismissSetupCard: () -> Unit
-) {
-    val tokens = LocalBoneTokens.current
-    val health = uiState.healthStatus
-    var showRestrictedGuide by remember { mutableStateOf(true) }
-
-    Surface(
-        color = tokens.cardSurface,
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(0.75.dp, tokens.borderHairline),
-        modifier = Modifier
-            .fillMaxWidth()
-            .testTag("system_setup_wizard_card")
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "SYSTEM PERMISSIONS & SETUP",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = tokens.accentInteractive
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = if (health.isFullyOptimized) {
-                            "All Interception Services Active"
-                        } else {
-                            "Complete 60-Second Interception Setup"
-                        },
-                        style = MaterialTheme.typography.titleMedium,
-                        color = tokens.textPrimary
-                    )
-                }
-                if (health.isCoreReady) {
-                    IconButton(
-                        onClick = onDismissSetupCard,
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Close,
-                            contentDescription = "Collapse setup guide",
-                            tint = tokens.textSecondary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
-            }
-
-            SetupStepRow(
-                stepNumber = "1",
-                title = "Quick Settings Tile (\"Catch\")",
-                subtitle = if (health.isQuickSettingsTileAdded) {
-                    "Added to Quick Settings panel"
-                } else {
-                    "Add tile to your top Quick Settings panel for 1-tap catching inside Instagram or Telegram"
-                },
-                isComplete = health.isQuickSettingsTileAdded,
-                actionLabel = if (health.isQuickSettingsTileAdded) "Re-Add" else "Add Tile",
-                testTag = "setup_add_tile_button",
-                onActionClick = onRequestAddTile
-            )
-
-            HorizontalDivider(thickness = 0.75.dp, color = tokens.borderHairline)
-
-            SetupStepRow(
-                stepNumber = "2",
-                title = "Google Song Result Interceptor",
-                subtitle = if (health.isAccessibilityServiceEnabled) {
-                    "Active \u2022 Passively gated until tile is tapped"
-                } else {
-                    "Automates Circle to Search Music button & captures recognized song title"
-                },
-                isComplete = health.isAccessibilityServiceEnabled,
-                actionLabel = if (health.isAccessibilityServiceEnabled) "Enabled" else "Enable",
-                testTag = "setup_enable_accessibility_button",
-                onActionClick = onOpenAccessibilitySettings
-            )
-
-            if (!health.isAccessibilityServiceEnabled) {
-                Surface(
-                    color = tokens.backgroundPrimary,
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(0.75.dp, tokens.borderHairline),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier.padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { showRestrictedGuide = !showRestrictedGuide },
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Security,
-                                    contentDescription = null,
-                                    tint = tokens.accentInteractive,
-                                    modifier = Modifier.size(15.dp)
-                                )
-                                Text(
-                                    text = "Is Accessibility grayed out? (Android 13+ Restricted Setting)",
-                                    style = MaterialTheme.typography.labelLarge.copy(
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    ),
-                                    color = tokens.textPrimary
-                                )
-                            }
-                            Icon(
-                                imageVector = if (showRestrictedGuide) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
-                                contentDescription = "Toggle guide",
-                                tint = tokens.textSecondary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-
-                        if (showRestrictedGuide) {
-                            Text(
-                                text = "1. Tap \"Open App Info\" below.\n" +
-                                    "2. Tap the 3-dot menu (\u22EE) in the top-right corner of the App Info screen.\n" +
-                                    "3. Tap \"Allow restricted settings\" and verify with Fingerprint/PIN, then tap \"Enable\" above.",
-                                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
-                                color = tokens.textSecondary
-                            )
-                            Surface(
-                                color = tokens.cardSurface,
-                                shape = RoundedCornerShape(8.dp),
-                                border = BorderStroke(0.75.dp, tokens.borderHairline),
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .clickable(onClick = onOpenAppInfoForRestrictedSettings)
-                                    .testTag("open_app_info_restricted_button")
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Text(
-                                        text = "Open App Info (Unlock Restricted Settings)",
-                                        style = MaterialTheme.typography.labelLarge.copy(
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.SemiBold
-                                        ),
-                                        color = tokens.accentInteractive
-                                    )
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Outlined.OpenInNew,
-                                        contentDescription = null,
-                                        tint = tokens.accentInteractive,
-                                        modifier = Modifier.size(13.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            HorizontalDivider(thickness = 0.75.dp, color = tokens.borderHairline)
-
-            SetupStepRow(
-                stepNumber = "3",
-                title = "Heads-Up Confirmation Banner",
-                subtitle = if (health.isNotificationPermissionGranted) {
-                    "Enabled \u2022 Alerts you immediately when a song is saved"
-                } else {
-                    "Required on Android 13+ to show the 'Song Saved' confirmation banner"
-                },
-                isComplete = health.isNotificationPermissionGranted,
-                actionLabel = if (health.isNotificationPermissionGranted) "Granted" else "Allow",
-                testTag = "setup_notification_permission_button",
-                onActionClick = onRequestNotificationPermission
-            )
-
-            HorizontalDivider(thickness = 0.75.dp, color = tokens.borderHairline)
-
-            SetupStepRow(
-                stepNumber = "4",
-                title = "Background Battery Protection (Unrestricted)",
-                subtitle = if (health.isBatteryOptimizationIgnored) {
-                    "Unrestricted \u2022 Protected from background service restrictions"
-                } else {
-                    "Prevents the system from restricting the tile or interceptor in the background"
-                },
-                isComplete = health.isBatteryOptimizationIgnored,
-                actionLabel = if (health.isBatteryOptimizationIgnored) "Protected" else "Unrestrict",
-                testTag = "setup_battery_unrestricted_button",
-                onActionClick = onRequestBatteryUnrestricted
-            )
-        }
-    }
-}
-
-@Composable
-private fun SetupStepRow(
-    stepNumber: String,
-    title: String,
-    subtitle: String,
-    isComplete: Boolean,
-    actionLabel: String,
-    testTag: String,
-    onActionClick: () -> Unit
-) {
-    val tokens = LocalBoneTokens.current
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(28.dp)
-                .clip(CircleShape)
-                .background(if (isComplete) tokens.statusReadyBg else tokens.iconBadgeSurface),
-            contentAlignment = Alignment.Center
-        ) {
-            if (isComplete) {
-                Icon(
-                    imageVector = Icons.Filled.CheckCircle,
-                    contentDescription = "Completed",
-                    tint = tokens.statusReady,
-                    modifier = Modifier.size(16.dp)
-                )
-            } else {
-                Text(
-                    text = stepNumber,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = tokens.textPrimary
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium.copy(fontSize = 14.sp),
-                color = tokens.textPrimary
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
-                color = tokens.textSecondary
-            )
-        }
-
-        Spacer(modifier = Modifier.width(10.dp))
-
-        Surface(
-            color = if (isComplete) tokens.backgroundPrimary else tokens.accentPrimary,
-            shape = RoundedCornerShape(16.dp),
-            border = BorderStroke(0.75.dp, if (isComplete) tokens.borderHairline else tokens.accentPrimary),
-            modifier = Modifier
-                .clip(RoundedCornerShape(16.dp))
-                .clickable(onClick = onActionClick)
-                .testTag(testTag)
-        ) {
-            Text(
-                text = actionLabel,
-                style = MaterialTheme.typography.labelLarge.copy(
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold
-                ),
-                color = if (isComplete) tokens.textSecondary else tokens.accentOnPrimary,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-            )
-        }
-    }
-}
-
-@Composable
-private fun MinimalistEmptyLibraryCard(
-    onAddQuickSettingsTile: () -> Unit,
-    onRunSampleCapture: () -> Unit
-) {
-    val tokens = LocalBoneTokens.current
-    Surface(
-        color = tokens.cardSurface,
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(0.75.dp, tokens.borderHairline),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp)
-            .testTag("empty_state_card")
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(tokens.iconBadgeSurface),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.GraphicEq,
-                    contentDescription = null,
-                    tint = tokens.accentInteractive,
-                    modifier = Modifier.size(28.dp)
-                )
-            }
-
-            Text(
-                text = stringResource(R.string.empty_state_title),
-                style = MaterialTheme.typography.titleLarge,
-                color = tokens.textPrimary,
-                textAlign = TextAlign.Center
-            )
-
-            Text(
-                text = stringResource(R.string.empty_state_subtitle),
-                style = MaterialTheme.typography.bodyMedium,
-                color = tokens.textSecondary,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    color = tokens.accentPrimary,
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .clickable(onClick = onAddQuickSettingsTile)
-                        .testTag("empty_state_add_tile_button")
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.AddCircleOutline,
-                            contentDescription = null,
-                            tint = tokens.accentOnPrimary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Text(
-                            text = stringResource(R.string.action_add_qs_tile),
-                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                            color = tokens.accentOnPrimary
-                        )
-                    }
-                }
-
-                Surface(
-                    color = tokens.backgroundPrimary,
-                    shape = RoundedCornerShape(20.dp),
-                    border = BorderStroke(0.75.dp, tokens.borderHairline),
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .clickable(onClick = onRunSampleCapture)
-                        .testTag("empty_state_demo_capture_button")
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.PlayCircleOutline,
-                            contentDescription = null,
-                            tint = tokens.textPrimary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Text(
-                            text = "Test Capture",
-                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium),
-                            color = tokens.textPrimary
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SongActionContextSheet(
-    song: CapturedSongEntity,
-    onDismiss: () -> Unit,
-    onSearchPersianDownload: () -> Unit,
-    onCopySongName: () -> Unit,
-    onSearchYouTube: () -> Unit,
-    onSearchSpotify: () -> Unit,
-    onToggleFavorite: () -> Unit,
-    onDeleteEntry: () -> Unit
-) {
-    val tokens = LocalBoneTokens.current
-    val downloadQueryPreview = remember(song) {
-        PersianDownloadBrowserLauncher.buildPersianDownloadQuery(song)
-    }
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = tokens.backgroundPrimary,
-        contentColor = tokens.textPrimary,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        modifier = Modifier.testTag("song_context_sheet")
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 28.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Text(
-                text = song.displayTitle,
-                style = MaterialTheme.typography.titleLarge,
-                color = tokens.textPrimary
-            )
-            Text(
-                text = "${song.displayArtist} \u2022 Raw: \"${song.fullRawTitle}\"",
-                style = MaterialTheme.typography.bodyMedium,
-                color = tokens.textSecondary
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            ContextSheetActionRow(
-                title = "Search & Download (\"$downloadQueryPreview\")",
-                subtitle = "Opens default browser with Persian download query",
-                icon = Icons.AutoMirrored.Outlined.OpenInNew,
-                highlight = true,
-                testTag = "context_action_persian_download",
-                onClick = onSearchPersianDownload
-            )
-
-            ContextSheetActionRow(
-                title = "Copy Song & Artist Name",
-                subtitle = "Copies clean track identifier to clipboard",
-                icon = Icons.Outlined.ContentCopy,
-                testTag = "context_action_copy",
-                onClick = onCopySongName
-            )
-
-            ContextSheetActionRow(
-                title = if (song.isFavorite) "Remove from Saved Favorites" else "Save to Favorites",
-                subtitle = "Pin track for quick filtering",
-                icon = if (song.isFavorite) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
-                testTag = "context_action_favorite",
-                onClick = onToggleFavorite
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Surface(
-                    color = tokens.cardSurface,
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(0.75.dp, tokens.borderHairline),
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .clickable(onClick = onSearchYouTube)
-                        .testTag("context_action_youtube")
-                ) {
-                    Box(modifier = Modifier.padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
-                        Text("Search YouTube", style = MaterialTheme.typography.labelLarge, color = tokens.textPrimary)
-                    }
-                }
-                Surface(
-                    color = tokens.cardSurface,
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(0.75.dp, tokens.borderHairline),
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .clickable(onClick = onSearchSpotify)
-                        .testTag("context_action_spotify")
-                ) {
-                    Box(modifier = Modifier.padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
-                        Text("Search Spotify", style = MaterialTheme.typography.labelLarge, color = tokens.textPrimary)
-                    }
-                }
-            }
-
-            ContextSheetActionRow(
-                title = "Delete Entry",
-                subtitle = "Remove this capture from your history list",
-                icon = Icons.Outlined.DeleteOutline,
-                isDestructive = true,
-                testTag = "context_action_delete",
-                onClick = onDeleteEntry
-            )
-        }
-    }
-}
-
-@Composable
-private fun ContextSheetActionRow(
-    title: String,
-    subtitle: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    highlight: Boolean = false,
-    isDestructive: Boolean = false,
-    testTag: String,
-    onClick: () -> Unit
-) {
-    val tokens = LocalBoneTokens.current
-    Surface(
-        color = if (highlight) tokens.accentPrimary else tokens.cardSurface,
-        shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(0.75.dp, if (highlight) tokens.accentPrimary else tokens.borderHairline),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
-            .testTag(testTag)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = when {
-                    highlight -> tokens.accentOnPrimary
-                    isDestructive -> tokens.accentInteractive
-                    else -> tokens.textPrimary
-                },
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontSize = 14.sp),
-                    color = when {
-                        highlight -> tokens.accentOnPrimary
-                        isDestructive -> tokens.accentInteractive
-                        else -> tokens.textPrimary
-                    },
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
-                    color = if (highlight) tokens.accentOnPrimary.copy(alpha = 0.78f) else tokens.textSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
                 )
             }
         }

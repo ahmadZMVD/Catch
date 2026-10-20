@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -41,6 +42,9 @@ import com.example.ui.SongHistoryScreen
 import com.example.ui.theme.CatchSongBoneTheme
 import com.example.util.AddedTileOutcome
 import com.example.util.PlatformCompat
+import com.example.util.RestrictedSettingsSessionUnlocker
+import com.example.util.RestrictedUnlockStep
+import com.example.util.SystemPermissionHelper
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.advanceTimeBy
@@ -49,6 +53,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -437,7 +442,7 @@ class PlatformCompatTest {
     }
 
     /**
-     * UI and branding verification:
+     * UI and branding verification when Accessibility is enabled:
      * Verifies on the Compose hierarchy (`360dp x 780dp`):
      * 1. App title is `"Catch"` (`R.string.app_name == "Catch"`).
      * 2. `"Ready to Catch"` is absent from the Home Screen (`onAllNodesWithText("Ready to Catch")` is empty).
@@ -470,7 +475,10 @@ class PlatformCompatTest {
 
         val initialState = viewModel.uiState.value.copy(
             songs = songs,
-            totalCount = songs.size
+            totalCount = songs.size,
+            healthStatus = viewModel.uiState.value.healthStatus.copy(
+                isAccessibilityServiceEnabled = true
+            )
         )
 
         composeTestRule.setContent {
@@ -490,6 +498,7 @@ class PlatformCompatTest {
         // 1. Verify app name resource and header title are "Catch"
         assertEquals("Catch", app.getString(R.string.app_name))
         assertEquals("Catch", app.getString(R.string.tile_label_catch_song))
+        assertEquals("Catch", app.getString(R.string.accessibility_service_label))
         composeTestRule.onNodeWithTag("app_header_title").assertIsDisplayed()
         composeTestRule.onNodeWithText("Catch").assertIsDisplayed()
 
@@ -534,11 +543,106 @@ class PlatformCompatTest {
     }
 
     /**
+     * Verifies Android 13-16 Restricted Settings unlock flow (`Step 2A -> 2B -> 2C`),
+     * `PackageInstaller` Store Session self-upgrade unlocker, Legacy Prototype (`com.aistudio.catchsong.kxmpzq`)
+     * warning card, and hiding of `catch_now_button` while Accessibility is disabled.
+     */
+    @Test
+    fun `restricted settings unlock wizard, store session unlocker, legacy prototype detector, and floating button visibility work end-to-end`() {
+        // 1. Verify 2A -> 2B -> 2C substep progression logic
+        assertEquals(
+            RestrictedUnlockStep.STEP_2A_TRIGGER_PROMPT,
+            SystemPermissionHelper.resolveRestrictedUnlockSubstep(
+                isAccessibilityServiceEnabled = false,
+                hasVisitedAccessibilityList = false,
+                hasVisitedAppInfo = false
+            )
+        )
+        assertEquals(
+            RestrictedUnlockStep.STEP_2B_ALLOW_IN_APP_INFO,
+            SystemPermissionHelper.resolveRestrictedUnlockSubstep(
+                isAccessibilityServiceEnabled = false,
+                hasVisitedAccessibilityList = true,
+                hasVisitedAppInfo = false
+            )
+        )
+        assertEquals(
+            RestrictedUnlockStep.STEP_2C_ENABLE_ACCESSIBILITY,
+            SystemPermissionHelper.resolveRestrictedUnlockSubstep(
+                isAccessibilityServiceEnabled = false,
+                hasVisitedAccessibilityList = true,
+                hasVisitedAppInfo = true
+            )
+        )
+        assertEquals(
+            RestrictedUnlockStep.COMPLETED,
+            SystemPermissionHelper.resolveRestrictedUnlockSubstep(
+                isAccessibilityServiceEnabled = true,
+                hasVisitedAccessibilityList = true,
+                hasVisitedAppInfo = true
+            )
+        )
+
+        // 2. Verify Store Session params and self-upgrade execution
+        val params = RestrictedSettingsSessionUnlocker.createStoreSessionParams(app.packageName, sdkInt = 36)
+        assertNotNull(params)
+        val unlockResult = RestrictedSettingsSessionUnlocker.executeStoreSessionSelfUpgrade(app, sdkInt = 36)
+        assertNotNull(unlockResult.outcome)
+
+        // 3. Verify legacy prototype uninstaller intent targets com.aistudio.catchsong.kxmpzq
+        val uninstallIntent = SystemPermissionHelper.buildUninstallLegacyPrototypeIntent()
+        assertEquals(Intent.ACTION_DELETE, uninstallIntent.action)
+        assertEquals("package:com.aistudio.catchsong.kxmpzq", uninstallIntent.dataString)
+
+        // 4. Render Home Screen while Accessibility is disabled & legacy prototype is detected
+        val setupState = viewModel.uiState.value.copy(
+            isSetupCardExpanded = true,
+            healthStatus = viewModel.uiState.value.healthStatus.copy(
+                isAccessibilityServiceEnabled = false,
+                isLegacyPrototypeInstalled = true
+            )
+        )
+
+        composeTestRule.setContent {
+            CatchSongBoneTheme(themeMode = AppThemeMode.LIGHT_BONE) {
+                Box(modifier = Modifier.size(width = 360.dp, height = 780.dp)) {
+                    SongHistoryScreen(
+                        uiState = setupState,
+                        viewModel = viewModel,
+                        simulatedTopCutoutInset = 38.dp,
+                        simulatedBottomNavInset = 16.dp
+                    )
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        // Verify catch_now_button is hidden while Accessibility is disabled so it never overlaps the Setup Wizard card
+        assertTrue(
+            "Floating catch_now_button must be hidden while Accessibility is disabled",
+            composeTestRule.onAllNodesWithTag("catch_now_button").fetchSemanticsNodes().isEmpty()
+        )
+
+        // Verify legacy prototype warning card and Restricted Settings 2A -> 2B -> 2C buttons are present
+        composeTestRule.onNodeWithTag("legacy_prototype_warning_card").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("uninstall_legacy_prototype_button").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("restricted_settings_unlock_card").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("step_2a_accessibility_button").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("open_app_info_restricted_button").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("step_2c_enable_button").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("store_session_auto_unlock_button").assertIsDisplayed()
+    }
+
+    /**
      * Multi-form-factor viewport (`411dp x 891dp` @ `1.3x` font scale and `800dp x 1280dp` tablet) verification.
      */
     @Test
     fun `responsive layout adapts cleanly across 411x891 at 1_3x font scale and 800x1280 tablet viewports`() {
-        val state = viewModel.uiState.value
+        val state = viewModel.uiState.value.copy(
+            healthStatus = viewModel.uiState.value.healthStatus.copy(
+                isAccessibilityServiceEnabled = true
+            )
+        )
         composeTestRule.setContent {
             CompositionLocalProvider(
                 LocalDensity provides Density(density = 2.625f, fontScale = 1.3f)

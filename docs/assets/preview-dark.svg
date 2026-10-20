@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 780" width="360" height="780">
+  <defs>
+    <filter id="cardShadowDark" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+    <filter id="fabShadowDark" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+
+  <!-- Phone Frame & Warm Obsidian Background (#111110) -->
+  <rect width="360" height="780" rx="34" fill="#111110" stroke="#2A2926" stroke-width="2"/>
+
+  <!-- Status Bar -->
+  <text x="28" y="28" font-family="Plus Jakarta Sans, -apple-system, BlinkMacSystemFont, sans-serif" font-size="12" font-weight="600" fill="#F5F2EB">9:41</text>
+  <circle cx="180" cy="22" r="6" fill="#000000" stroke="#2A2926" stroke-width="1"/>
+  <rect x="304" y="18" width="22" height="10" rx="3" fill="none" stroke="#F5F2EB" stroke-width="1.4"/>
+  <rect x="306" y="20" width="16" height="6" rx="1.5" fill="#F5F2EB"/>
+
+  <!-- Top Header Row (Cutout Clearance + Optical Row) -->
+  <text x="22" y="78" font-family="Plus Jakarta Sans, -apple-system, BlinkMacSystemFont, sans-serif" font-size="24" font-weight="700" fill="#F5F2EB">Catch</text>
+  <!-- Settings Gear Icon -->
+  <g transform="translate(316, 62)">
+    <circle cx="10" cy="10" r="8" fill="none" stroke="#F5F2EB" stroke-width="1.6"/>
+    <circle cx="10" cy="10" r="3" fill="none" stroke="#F5F2EB" stroke-width="1.6"/>
+  </g>
+  <line x1="22" y1="96" x2="338" y2="96" stroke="#262522" stroke-width="1"/>
+
+  <!-- Library Section Header -->
+  <text x="22" y="122" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="600" letter-spacing="0.6" fill="#78736A">CAPTURED LIBRARY (5)</text>
+  <text x="164" y="122" font-family="Plus Jakarta Sans, sans-serif" font-size="10.5" fill="#78736A">Tap row to search &quot;دانلود&quot;</text>
+
+  <!-- Card 1 -->
+  <g transform="translate(22, 136)" filter="url(#cardShadowDark)">
+    <rect width="316" height="76" rx="16" fill="#1A1917" stroke="#262522" stroke-width="1"/>
+    <rect x="16" y="18" width="40" height="40" rx="12" fill="#242320"/>
+    <text x="36" y="44" text-anchor="middle" font-family="sans-serif" font-size="17" fill="#E08364">&#9835;</text>
+    <text x="68" y="34" font-family="Plus Jakarta Sans, sans-serif" font-size="15.5" font-weight="600" fill="#F5F2EB">Midnight City</text>
+    <text x="68" y="54" font-family="Plus Jakarta Sans, sans-serif" font-size="12.5" fill="#A6A096">M83 &#8226; Just now &#8226; Instagram</text>
+    <circle cx="286" cy="38" r="14" fill="#242320"/>
+    <text x="286" y="43" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#F5F2EB">&#8599;</text>
+  </g>
+
+  <!-- Card 2 -->
+  <g transform="translate(22, 224)" filter="url(#cardShadowDark)">
+    <rect width="316" height="76" rx="16" fill="#1A1917" stroke="#262522" stroke-width="1"/>
+    <rect x="16" y="18" width="40" height="40" rx="12" fill="#242320"/>
+    <text x="36" y="44" text-anchor="middle" font-family="sans-serif" font-size="17" fill="#E08364">&#9835;</text>
+    <text x="68" y="34" font-family="Plus Jakarta Sans, sans-serif" font-size="15.5" font-weight="600" fill="#F5F2EB">گوهر کمیاب</text>
+    <text x="68" y="54" font-family="Plus Jakarta Sans, sans-serif" font-size="12.5" fill="#A6A096">محسن چاوشی &#8226; 3m ago &#8226; Telegram</text>
+    <circle cx="286" cy="38" r="14" fill="#242320"/>
+    <text x="286" y="43" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#F5F2EB">&#8599;</text>
+  </g>
+
+  <!-- Card 3 -->
+  <g transform="translate(22, 312)" filter="url(#cardShadowDark)">
+    <rect width="316" height="76" rx="16" fill="#1A1917" stroke="#262522" stroke-width="1"/>
+    <rect x="16" y="18" width="40" height="40" rx="12" fill="#242320"/>
+    <text x="36" y="44" text-anchor="middle" font-family="sans-serif" font-size="17" fill="#F5F2EB">&#9835;</text>
+    <text x="68" y="34" font-family="Plus Jakarta Sans, sans-serif" font-size="15.5" font-weight="600" fill="#F5F2EB">Blinding Lights</text>
+    <text x="68" y="54" font-family="Plus Jakarta Sans, sans-serif" font-size="12.5" fill="#A6A096">The Weeknd &#8226; 14m ago &#8226; TikTok</text>
+    <circle cx="286" cy="38" r="14" fill="#242320"/>
+    <text x="286" y="43" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#F5F2EB">&#8599;</text>
+  </g>
+
+  <!-- Card 4 -->
+  <g transform="translate(22, 400)" filter="url(#cardShadowDark)">
+    <rect width="316" height="76" rx="16" fill="#1A1917" stroke="#262522" stroke-width="1"/>
+    <rect x="16" y="18" width="40" height="40" rx="12" fill="#242320"/>
+    <text x="36" y="44" text-anchor="middle" font-family="sans-serif" font-size="17" fill="#F5F2EB">&#9835;</text>
+    <text x="68" y="34" font-family="Plus Jakarta Sans, sans-serif" font-size="15.5" font-weight="600" fill="#F5F2EB">Veridis Quo</text>
+    <text x="68" y="54" font-family="Plus Jakarta Sans, sans-serif" font-size="12.5" fill="#A6A096">Daft Punk &#8226; 1h ago &#8226; YouTube</text>
+    <circle cx="286" cy="38" r="14" fill="#242320"/>
+    <text x="286" y="43" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#F5F2EB">&#8599;</text>
+  </g>
+
+  <!-- Card 5 -->
+  <g transform="translate(22, 488)" filter="url(#cardShadowDark)">
+    <rect width="316" height="76" rx="16" fill="#1A1917" stroke="#262522" stroke-width="1"/>
+    <rect x="16" y="18" width="40" height="40" rx="12" fill="#242320"/>
+    <text x="36" y="44" text-anchor="middle" font-family="sans-serif" font-size="17" fill="#F5F2EB">&#9835;</text>
+    <text x="68" y="34" font-family="Plus Jakarta Sans, sans-serif" font-size="15.5" font-weight="600" fill="#F5F2EB">Starboy</text>
+    <text x="68" y="54" font-family="Plus Jakarta Sans, sans-serif" font-size="12.5" fill="#A6A096">The Weeknd &#8226; Yesterday &#8226; Instagram</text>
+    <circle cx="286" cy="38" r="14" fill="#242320"/>
+    <text x="286" y="43" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#F5F2EB">&#8599;</text>
+  </g>
+
+  <!-- 56.dp Circular "Catch Now" Button at Bottom Center -->
+  <g transform="translate(180, 708)" filter="url(#fabShadowDark)">
+    <circle cx="0" cy="0" r="28" fill="#F5F2EB"/>
+    <rect x="-9" y="-6" width="2.6" height="12" rx="1.3" fill="#111110"/>
+    <rect x="-4" y="-11" width="2.6" height="22" rx="1.3" fill="#111110"/>
+    <rect x="1.4" y="-8" width="2.6" height="16" rx="1.3" fill="#111110"/>
+    <rect x="6.5" y="-4" width="2.6" height="8" rx="1.3" fill="#111110"/>
+  </g>
+
+  <!-- Gesture Navigation Bar -->
+  <rect x="126" y="764" width="108" height="4" rx="2" fill="#F5F2EB" opacity="0.28"/>
+</svg>

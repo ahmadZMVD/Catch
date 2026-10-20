@@ -10,14 +10,28 @@ import android.provider.Settings
 import com.example.service.GoogleMusicAccessibilityService
 import com.example.service.SongCatchTileService
 
+enum class RestrictedUnlockStep {
+    STEP_2A_TRIGGER_PROMPT,
+    STEP_2B_ALLOW_IN_APP_INFO,
+    STEP_2C_ENABLE_ACCESSIBILITY,
+    COMPLETED
+}
+
+typealias RestrictedUnlockSubstep = RestrictedUnlockStep
+
 data class SystemHealthStatus(
     val isAccessibilityServiceEnabled: Boolean = false,
     val isNotificationPermissionGranted: Boolean = true,
     val isBatteryOptimizationIgnored: Boolean = false,
     val isGoogleQuickSearchInstalled: Boolean = true,
     val isQuickSettingsTileAdded: Boolean = false,
-    val hasVisitedAccessibilitySettings: Boolean = false
+    val hasVisitedAccessibilitySettings: Boolean = false,
+    val hasVisitedAppInfoSettings: Boolean = false,
+    val isLegacyPrototypeInstalled: Boolean = false
 ) {
+    val hasVisitedAppInfo: Boolean
+        get() = hasVisitedAppInfoSettings
+
     val isCoreReady: Boolean
         get() = isAccessibilityServiceEnabled && isNotificationPermissionGranted
 
@@ -27,8 +41,21 @@ data class SystemHealthStatus(
             isBatteryOptimizationIgnored
 
     /**
+     * Resolves the active substep (`2A -> 2B -> 2C`) for unlocking Restricted Settings on Android 13+.
+     */
+    val currentRestrictedUnlockStep: RestrictedUnlockStep
+        get() = SystemPermissionHelper.resolveRestrictedUnlockSubstep(
+            isAccessibilityServiceEnabled = isAccessibilityServiceEnabled,
+            hasVisitedAccessibilityList = hasVisitedAccessibilitySettings,
+            hasVisitedAppInfo = hasVisitedAppInfoSettings
+        )
+
+    val activeRestrictedUnlockSubstep: RestrictedUnlockStep
+        get() = currentRestrictedUnlockStep
+
+    /**
      * On Android 13+ (API 33+), sideloaded APKs require unlocking "Allow restricted settings"
-     * in App Info before the Accessibility toggle becomes interactive.
+     * in App Info after first triggering the "App was denied access" prompt in Accessibility settings.
      */
     val isLikelyBlockedByRestrictedSettings: Boolean
         get() = !isAccessibilityServiceEnabled &&
@@ -39,11 +66,26 @@ data class SystemHealthStatus(
 object SystemPermissionHelper {
 
     const val GOOGLE_QSB_PACKAGE = "com.google.android.googlequicksearchbox"
+    const val LEGACY_PROTOTYPE_PACKAGE = "com.aistudio.catchsong.kxmpzq"
+
+    fun resolveRestrictedUnlockSubstep(
+        isAccessibilityServiceEnabled: Boolean,
+        hasVisitedAccessibilityList: Boolean,
+        hasVisitedAppInfo: Boolean
+    ): RestrictedUnlockStep {
+        return when {
+            isAccessibilityServiceEnabled -> RestrictedUnlockStep.COMPLETED
+            !hasVisitedAccessibilityList -> RestrictedUnlockStep.STEP_2A_TRIGGER_PROMPT
+            !hasVisitedAppInfo -> RestrictedUnlockStep.STEP_2B_ALLOW_IN_APP_INFO
+            else -> RestrictedUnlockStep.STEP_2C_ENABLE_ACCESSIBILITY
+        }
+    }
 
     fun evaluateSystemHealth(
         context: Context,
         isTileAddedFlag: Boolean = false,
-        hasVisitedAccessibilityFlag: Boolean = false
+        hasVisitedAccessibilityFlag: Boolean = false,
+        hasVisitedAppInfoFlag: Boolean = false
     ): SystemHealthStatus {
         return SystemHealthStatus(
             isAccessibilityServiceEnabled = isAccessibilityServiceEnabled(context),
@@ -51,7 +93,9 @@ object SystemPermissionHelper {
             isBatteryOptimizationIgnored = isBatteryOptimizationIgnored(context),
             isGoogleQuickSearchInstalled = isGoogleAppInstalled(context),
             isQuickSettingsTileAdded = isTileAddedFlag || SongCatchTileService.isTileListeningInSystem,
-            hasVisitedAccessibilitySettings = hasVisitedAccessibilityFlag
+            hasVisitedAccessibilitySettings = hasVisitedAccessibilityFlag,
+            hasVisitedAppInfoSettings = hasVisitedAppInfoFlag,
+            isLegacyPrototypeInstalled = isLegacyPrototypeInstalled(context)
         )
     }
 
@@ -93,6 +137,48 @@ object SystemPermissionHelper {
             false
         }
     }
+
+    /**
+     * Checks whether the older prototype package (`com.aistudio.catchsong.kxmpzq`) is still installed
+     * on the device, which would otherwise show a duplicate entry in Accessibility settings.
+     */
+    fun isLegacyPrototypeInstalled(context: Context): Boolean {
+        return try {
+            context.packageManager.getPackageInfo(LEGACY_PROTOTYPE_PACKAGE, 0)
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Builds the `ACTION_DELETE` intent targeting the legacy prototype package (`com.aistudio.catchsong.kxmpzq`).
+     */
+    fun buildUninstallLegacyPrototypeIntent(): Intent {
+        return Intent(Intent.ACTION_DELETE, Uri.parse("package:$LEGACY_PROTOTYPE_PACKAGE")).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+    }
+
+    /**
+     * Launches the system package uninstaller for `com.aistudio.catchsong.kxmpzq`.
+     */
+    fun promptUninstallLegacyPrototype(context: Context) {
+        try {
+            context.startActivity(buildUninstallLegacyPrototypeIntent())
+        } catch (_: Exception) {
+            try {
+                val appInfoIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", LEGACY_PROTOTYPE_PACKAGE, null)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(appInfoIntent)
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    fun uninstallLegacyPrototype(context: Context) = promptUninstallLegacyPrototype(context)
 
     /**
      * Opens App Info so the user can allow restricted settings on Android 13+ or configure

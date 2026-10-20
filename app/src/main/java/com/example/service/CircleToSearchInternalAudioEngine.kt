@@ -164,7 +164,7 @@ class CircleToSearchInternalAudioEngine(
         if (bridge == null) {
             stateMachine.abortHandshakeOnTriggerFailure(
                 sessionId = sessionId,
-                reason = "Accessibility Service is not connected. Enable Catch Interceptor in Settings.",
+                reason = "Accessibility Service is not connected. Enable Catch in Settings.",
                 notifyExplicitFailure = false
             )
             return

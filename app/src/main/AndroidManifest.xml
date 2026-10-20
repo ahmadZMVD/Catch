@@ -2,21 +2,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Permissions for confirmation notifications, haptics, and background battery optimization exemption -->
+    <!-- System permissions for confirmation notifications, haptics, and background reliability -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-    <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
-    <!-- Android 11+ (API 30+) package visibility declarations -->
+    <!-- Package visibility for Google Circle to Search, legacy prototype cleanup, and HTTPS search -->
     <queries>
         <package android:name="com.google.android.googlequicksearchbox" />
-        <package android:name="com.android.systemui" />
-        <package android:name="com.instagram.android" />
-        <package android:name="org.telegram.messenger" />
-        <package android:name="com.zhiliaoapp.musically" />
-        <package android:name="com.google.android.youtube" />
-        <package android:name="com.spotify.music" />
+        <package android:name="com.aistudio.catchsong.kxmpzq" />
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <category android:name="android.intent.category.BROWSABLE" />
@@ -35,30 +31,26 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Catch">
 
+        <!-- Main Song History & Setup Activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:launchMode="singleTop"
+            android:windowSoftInputMode="adjustResize"
+            android:label="@string/app_name"
             android:theme="@style/Theme.Catch">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <intent-filter>
-                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
-            </intent-filter>
         </activity>
 
-        <!-- Translucent fallback activity for Quick Settings tile shade collapse -->
+        <!-- Transparent trampoline activity used only as a fallback when Accessibility is disabled -->
         <activity
             android:name=".service.TileTriggerTrampolineActivity"
-            android:excludeFromRecents="true"
             android:exported="false"
-            android:finishOnTaskLaunch="true"
-            android:launchMode="singleInstance"
+            android:excludeFromRecents="true"
             android:noHistory="true"
-            android:stateNotNeeded="true"
             android:taskAffinity=""
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
@@ -80,11 +72,12 @@
                 android:value="true" />
         </service>
 
-        <!-- Scoped Accessibility Service for Circle to Search Internal Audio Automation & Result Interception -->
+        <!-- Circle to Search Audio Accessibility Service -->
         <service
             android:name=".service.GoogleMusicAccessibilityService"
-            android:exported="false"
+            android:exported="true"
             android:label="@string/accessibility_service_label"
+            android:description="@string/accessibility_service_description"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
@@ -94,14 +87,15 @@
                 android:resource="@xml/accessibility_service_config" />
         </service>
 
-        <!-- Notification Action Receiver for 1-Tap Persian Download Browser Launch from Banner -->
+        <!-- Notification Action BroadcastReceiver -->
         <receiver
             android:name=".notification.NotificationActionReceiver"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.example.action.NOTIFICATION_DOWNLOAD_SONG" />
-            </intent-filter>
-        </receiver>
+            android:exported="false" />
+
+        <!-- PackageInstaller Store Session Unlock BroadcastReceiver -->
+        <receiver
+            android:name=".util.SessionUnlockReceiver"
+            android:exported="false" />
 
     </application>
 

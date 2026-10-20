@@ -5,8 +5,8 @@
     <string name="tile_subtitle_listening">Listening...</string>
     <string name="tile_subtitle_setup">Setup required</string>
 
-    <string name="accessibility_service_label">Catch Interceptor</string>
-    <string name="accessibility_service_description">Triggers the Circle to Search audio recognition action and captures the recognized song title and artist into your Catch library when initiated from the Quick Settings Tile or in-app button. Does not read personal messages or passwords.</string>
+    <string name="accessibility_service_label">Catch</string>
+    <string name="accessibility_service_description">Helps you identify songs playing on your device by pressing the Music button in Google Circle to Search and saving the recognized track title to your local Catch library. Does not collect, store, or transmit personal or financial data.</string>
 
     <string name="notification_channel_name">Captured Song Alerts</string>
     <string name="notification_channel_desc">Instant confirmation banners with 1-tap Persian download search when a song is recognized.</string>

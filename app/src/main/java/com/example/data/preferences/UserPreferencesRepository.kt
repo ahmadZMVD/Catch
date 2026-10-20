@@ -36,8 +36,12 @@ data class UserPreferencesState(
     val treeDebuggerEnabled: Boolean = true,
     val activeWindowTimeoutSeconds: Int = 18,
     val isTileAddedToQuickSettings: Boolean = false,
-    val hasVisitedAccessibilitySettings: Boolean = false
-)
+    val hasVisitedAccessibilitySettings: Boolean = false,
+    val hasVisitedAppInfo: Boolean = false
+) {
+    val hasVisitedAppInfoSettings: Boolean
+        get() = hasVisitedAppInfo
+}
 
 class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
 
@@ -48,6 +52,7 @@ class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
         val TIMEOUT_SECONDS = intPreferencesKey("active_window_timeout_seconds")
         val TILE_ADDED = booleanPreferencesKey("is_tile_added")
         val VISITED_ACCESSIBILITY = booleanPreferencesKey("has_visited_accessibility")
+        val VISITED_APP_INFO = booleanPreferencesKey("has_visited_app_info")
     }
 
     val preferencesFlow: Flow<UserPreferencesState> = dataStore.data
@@ -65,7 +70,8 @@ class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
                 treeDebuggerEnabled = prefs[Keys.TREE_DEBUGGER_ENABLED] ?: true,
                 activeWindowTimeoutSeconds = (prefs[Keys.TIMEOUT_SECONDS] ?: 18).coerceIn(8, 30),
                 isTileAddedToQuickSettings = prefs[Keys.TILE_ADDED] ?: false,
-                hasVisitedAccessibilitySettings = prefs[Keys.VISITED_ACCESSIBILITY] ?: false
+                hasVisitedAccessibilitySettings = prefs[Keys.VISITED_ACCESSIBILITY] ?: false,
+                hasVisitedAppInfo = prefs[Keys.VISITED_APP_INFO] ?: false
             )
         }
 
@@ -92,4 +98,10 @@ class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
     suspend fun setHasVisitedAccessibilitySettings(visited: Boolean) {
         dataStore.edit { it[Keys.VISITED_ACCESSIBILITY] = visited }
     }
+
+    suspend fun setHasVisitedAppInfo(visited: Boolean) {
+        dataStore.edit { it[Keys.VISITED_APP_INFO] = visited }
+    }
+
+    suspend fun setHasVisitedAppInfoSettings(visited: Boolean) = setHasVisitedAppInfo(visited)
 }

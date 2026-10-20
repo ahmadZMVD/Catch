@@ -1,35 +1,33 @@
 # Catch
 
 [![Android CI](https://github.com/ahmadZMVD/Catch/actions/workflows/ci.yml/badge.svg)](https://github.com/ahmadZMVD/Catch/actions/workflows/ci.yml)
-[![Release Multi-ABI APKs](https://github.com/ahmadZMVD/Catch/actions/workflows/release.yml/badge.svg)](https://github.com/ahmadZMVD/Catch/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Latest Release](https://img.shields.io/github/v/release/ahmadZMVD/Catch?label=Release&color=D97757)](https://github.com/ahmadZMVD/Catch/releases/latest)
+[![Platform](https://img.shields.io/badge/Android-9.0%2B%20(API%2028--36)-141413)](https://developer.android.com)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.2-7F52FF)](https://kotlinlang.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-2E7D32.svg)](LICENSE)
 
-**Catch** is an Android utility that identifies songs playing inside foreground video and social media apps (such as Instagram Reels, Telegram video messages, TikTok, and YouTube Shorts) with a single tap from the Quick Settings panel, without pausing foreground video playback.
+<p align="center">
+  <img src="docs/assets/preview-light.svg" width="320" alt="Catch Main Screen Light Mode" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="docs/assets/preview-dark.svg" width="320" alt="Catch Main Screen Dark Mode" />
+</p>
 
-When triggered, Catch collapses the Quick Settings panel using system accessibility actions rather than starting an Activity, invokes Google's contextual Circle to Search / Sound Search overlay over the active window, clicks the audio recognition action, waits for a stabilized track match, saves the recognized song to a local Room database, and dismisses the overlay automatically.
-
----
-
-## Features
-
-- **Non-Intrusive Quick Settings Trigger**: Dismisses the notification shade via `AccessibilityService.GLOBAL_ACTION_DISMISS_NOTIFICATION_SHADE` (API 31+) or `Intent.ACTION_CLOSE_SYSTEM_DIALOGS` (API 28-30) so the foreground media player retains window focus and never receives `onPause()`.
-- **Multi-Window Accessibility Inspection**: Uses `FLAG_RETRIEVE_INTERACTIVE_WINDOWS` to inspect all interactive `AccessibilityWindowInfo` layers on screen, allowing song results rendered inside `com.google.android.googlequicksearchbox` overlay windows to be parsed even while `rootInActiveWindow` belongs to the underlying social app.
-- **Cascading Search Invocation**:
-  1. Direct `IVoiceInteractionManagerService.showSessionFromSession` (`Omni`) Binder invocation across API 34-36 (4-parameter signature) and API 28-33 (3-parameter signature).
-  2. Stationary `650ms` long-press gesture dispatched to the system navigation handle (`TYPE_NAVIGATION_BAR`).
-  3. Intent fallback (`com.google.android.googlequicksearchbox.MUSIC_SEARCH` / `android.intent.action.MUSIC_SEARCH`) for Android 9-12 devices without Circle to Search support.
-- **3-Tier Node Extraction & Stabilization**:
-  - **Tier 1**: Matches explicit `sound_search_result_title` / `sound_search_result_artist` resource IDs.
-  - **Tier 2**: Parses localized `"Song by ..."` / `"Track by ..."` and RTL Persian/Arabic bylines when resource IDs are obfuscated.
-  - **Tier 3**: Spatial vertical-stack heuristic that pairs primary title text nodes with adjacent subtitle nodes while filtering out transient UI labels (`"Listening..."`, `"Play, sing, or hum a song"`, `"Translate"`, `"Try again"`).
-  - Enforces a `3,200ms` minimum audio sampling window and a `250ms` result stabilization debounce before committing a track match and dispatching `GLOBAL_ACTION_BACK`.
-- **One-Tap Download Search**: Tapping any captured song row or the `"Download (Search)"` notification action opens the default browser with a UTF-8 URL-encoded Google Search query appending the Persian download keyword (`<Song> <Artist> &#x062F;&#x0627;&#x0646;&#x0644;&#x0648;&#x062F;`, encoded as `+%D8%AF%D8%A7%D9%86%D9%84%D9%88%D8%AF`).
-- **Local Room Library & Multi-Format Backup**: Stores full capture history locally via Room SQLite (`catch_song_library.db`) with instant search filtering, favorites, and export/restore support in JSON, CSV, and plain text formats.
-- **Adaptive Bone Light & Obsidian Dark Themes**: Built with Jetpack Compose and Material 3, featuring configurable theme modes (`Bone Light`, `Obsidian Dark`, and `System`) and responsive window-insets handling across phones and tablets.
+**Catch** is a zero-pause Android song recognition utility that bridges a Quick Settings Tile directly to Google's system-level **Circle to Search** / **Sound Search** internal audio engine, automatically saves recognized tracks to a local Room database, and enables 1-tap Persian music download queries (`"<Song> <Artist> دانلود"`).
 
 ---
 
-## Architecture
+## Why Catch Exists
+
+Identifying background music playing inside short-form video apps (Instagram Reels, Telegram video channels, TikTok, YouTube Shorts) typically breaks media playback:
+1. Switching to an external recognition app pauses the foreground video player.
+2. Microphone-based recognition degrades in noisy environments or when listening over Bluetooth headphones.
+3. Manually invoking Circle to Search, tapping the Music note button, copying the recognized title, and pasting it into a browser takes 5–6 manual interactions per track.
+
+**Catch** reduces this workflow to a single tap on the **Catch** Quick Settings Tile while keeping the underlying video playing uninterrupted.
+
+---
+
+## Architecture & Recognition Pipeline
 
 ```text
 app/src/main/java/com/example/
@@ -37,100 +35,118 @@ app/src/main/java/com/example/
 |-- MainActivity.kt                          # Edge-to-edge Compose host activity
 |-- data/
 |   |-- local/
-|   |   |-- AppDatabase.kt                   # Room database configuration (catch_song_library.db)
-|   |   |-- CapturedSongDao.kt               # Reactive Flow queries and CRUD operations
-|   |   \-- CapturedSongEntity.kt            # Captured song table schema and display helpers
+|   |   |-- AppDatabase.kt                   # Room SQLite database with WAL concurrency
+|   |   |-- CapturedSongDao.kt               # Reactive Flow queries, search filtering, and deduplication
+|   |   `-- CapturedSongEntity.kt            # Normalized track entity (title, artist, source package, timestamp)
 |   |-- preferences/
-|   |   \-- UserPreferencesRepository.kt     # Jetpack DataStore preferences (theme, timeout, duplicate policy)
-|   \-- repository/
-|       \-- SongRepository.kt                # Repository layer and JSON / CSV / TXT archive serializer
+|   |   `-- UserPreferencesRepository.kt     # Jetpack DataStore for theme mode and capture settings
+|   `-- repository/
+|       `-- SongRepository.kt                # Repository layer + JSON / CSV / Markdown export & restore
 |-- domain/
-|   \-- interception/
-|       |-- GoogleMusicNodeParser.kt         # 3-tier Accessibility node parser and JSON tree serializer
-|       |-- InterceptionModels.kt            # Immutable node snapshots and multi-window environment models
-|       \-- InterceptionStateMachine.kt      # Session state machine, sampling window, and watchdog timer
+|   `-- interception/
+|       |-- GoogleMusicNodeParser.kt         # Multi-locale AccessibilityNodeInfo parser & geometric heuristics
+|       |-- InterceptionModels.kt            # Immutable state snapshots & window layer summaries
+|       `-- InterceptionStateMachine.kt      # Deterministic state machine with 250ms result stabilization
 |-- notification/
-|   |-- NotificationActionReceiver.kt        # BroadcastReceiver for notification download actions
-|   \-- SongNotificationDispatcher.kt        # High-priority confirmation notifications and haptic pulses
+|   |-- NotificationActionReceiver.kt        # BroadcastReceiver for 1-tap notification download search
+|   `-- SongNotificationDispatcher.kt        # Heads-up confirmation notification builder
 |-- service/
-|   |-- CircleToSearchInternalAudioEngine.kt # Coroutine pipeline coordinating shade collapse, summon, and match
-|   |-- GoogleMusicAccessibilityService.kt   # AccessibilityService bridge and multi-window node traversal
-|   |-- HiddenApiHelper.kt                   # VoiceInteractionSession Binder invocation helper
-|   |-- SongCatchTileService.kt              # Quick Settings TileService implementation
-|   \-- TileTriggerTrampolineActivity.kt     # Legacy fallback activity for shade collapse
+|   |-- CircleToSearchInternalAudioEngine.kt # 6-stage non-pausing recognition orchestrator
+|   |-- GoogleMusicAccessibilityService.kt   # Event-gated AccessibilityService bridge
+|   |-- HiddenApiHelper.kt                   # Multi-API VoiceInteraction binder invoker (API 28-36)
+|   |-- SongCatchTileService.kt              # Quick Settings TileService entry point
+|   `-- TileTriggerTrampolineActivity.kt     # Transparent fallback trampoline when Accessibility is inactive
 |-- ui/
-|   |-- CatchViewModel.kt                    # MVVM state holder combining Room history and session telemetry
-|   |-- SettingsBottomSheet.kt               # Appearance, engine timeout, backup/restore, and tree inspector UI
-|   |-- SongHistoryScreen.kt                 # Main library screen, setup card, and bottom capture trigger
-|   \-- theme/
-|       |-- Color.kt                         # Bone Light and Obsidian Dark color tokens
-|       |-- Theme.kt                         # Compose theme provider
-|       \-- Type.kt                          # Plus Jakarta Sans and JetBrains Mono typography definitions
-\-- util/
-    |-- SystemPermissionHelper.kt            # System permission checks and deep-link intents
-    |-- PersianDownloadBrowserLauncher.kt    # UTF-8 URL encoder and browser intent launcher
-    \-- PlatformCompat.kt                    # Runtime compatibility helpers across API 28 through 36
+|   |-- CatchViewModel.kt                    # Unidirectional StateFlow ViewModel
+|   |-- SettingsBottomSheet.kt               # Theme switcher, JSON/CSV backup, and diagnostics sheet
+|   |-- SongHistoryScreen.kt                 # Warm Bone / Obsidian library UI & 56.dp circular Catch button
+|   |-- components/                          # Restricted Settings 2A->2B->2C wizard, legacy detector, and sheets
+|   `-- theme/                               # Color tokens, typography, and Material 3 theme
+`-- util/
+    |-- PersianDownloadBrowserLauncher.kt    # UTF-8 URL encoder appending Persian download suffix
+    |-- PlatformCompat.kt                    # Central SDK-version compatibility dispatcher (API 28-36)
+    |-- RestrictedSettingsSessionUnlocker.kt # PackageInstaller PACKAGE_SOURCE_STORE session unlocker
+    `-- SystemPermissionHelper.kt            # Accessibility, notification, and 2A->2B->2C setup helpers
+```
+
+### Six-Stage Non-Pausing Pipeline
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Tile as SongCatchTileService
+    participant A11y as CatchAccessibilityService
+    participant CTS as Google Circle to Search Overlay
+    participant DB as Room Database & Notification
+
+    User->>Tile: Tap "Catch" Quick Settings Tile
+    Tile->>A11y: requestStartFromTile() (Zero Activity launch)
+    A11y->>A11y: Stage 1: Collapse QS Shade (GLOBAL_ACTION_DISMISS_NOTIFICATION_SHADE)
+    A11y->>A11y: Stage 2: Poll getWindows() until Notification Shade is gone + 380ms settle
+    A11y->>CTS: Stage 3: Invoke Contextual Search (Binder Omni / Nav Handle Long-Press)
+    A11y->>CTS: Stage 4: Locate & click Music Search button (Resource ID -> Text -> Bounds)
+    CTS-->>A11y: Stage 5: Enforce 3,200ms audio listening grace window + 250ms title debounce
+    A11y->>CTS: Stage 6: Dispatch GLOBAL_ACTION_BACK to dismiss overlay immediately
+    A11y->>DB: Persist track in Room & post "Song Saved to Library" notification
 ```
 
 ---
 
-## Compatibility
+## Multi-API & Multi-Architecture Compatibility
 
-| Property | Supported Range |
-| :--- | :--- |
-| **Minimum SDK** | Android 9 Pie (`API 28`) |
-| **Target / Compile SDK** | Android 16 (`API 36`) |
-| **CPU Architectures (ABIs)** | `arm64-v8a`, `armeabi-v7a`, `x86_64`, `x86`, plus `universal` |
-| **16 KB Page Alignment** | Enabled (`jniLibs.useLegacyPackaging = false`) |
-| **Google App Package** | `com.google.android.googlequicksearchbox` |
+| Android Version | API Level | Shade Collapse Mechanism | Contextual Search Invocation |
+| :--- | :--- | :--- | :--- |
+| **Android 14 – 16** | API 34 – 36 | `GLOBAL_ACTION_DISMISS_NOTIFICATION_SHADE` (`15`) | 4-arg `showSessionFromSession` -> Nav Handle Long-Press (`950ms`) |
+| **Android 12 – 13** | API 31 – 33 | `GLOBAL_ACTION_DISMISS_NOTIFICATION_SHADE` (`15`) | 3-arg `showSessionFromSession` -> Nav Handle Long-Press (`950ms`) |
+| **Android 9 – 11** | API 28 – 30 | `Intent.ACTION_CLOSE_SYSTEM_DIALOGS` | 3-arg `showSessionFromSession` -> `com.google.android.googlequicksearchbox.MUSIC_SEARCH` |
 
----
+### Download APK by Device Architecture
 
-## Releases & Multi-ABI APKs
-
-Every release build automatically generates five signed APKs under `app/build/outputs/apk/release/` (and publishes them to [GitHub Releases](https://github.com/ahmadZMVD/Catch/releases)):
-
-- `Catch-v1.0.0-arm64-v8a.apk` (64-bit ARM devices)
-- `Catch-v1.0.0-armeabi-v7a.apk` (32-bit ARM devices)
-- `Catch-v1.0.0-x86_64.apk` (64-bit x86 tablets / emulators)
-- `Catch-v1.0.0-x86.apk` (32-bit x86 targets)
-- `Catch-v1.0.0-universal.apk` (Universal APK containing all 4 ABIs)
+| APK Variant | Target CPU Architecture | Recommended Devices | Download |
+| :--- | :--- | :--- | :--- |
+| **`Catch-v1.0.1-arm64-v8a.apk`** | 64-bit ARM (`arm64-v8a`) | All modern phones & tablets (2018–present) | [Latest Release](https://github.com/ahmadZMVD/Catch/releases/latest) |
+| **`Catch-v1.0.1-armeabi-v7a.apk`** | 32-bit ARM (`armeabi-v7a`) | Legacy 32-bit ARM devices & Android Go | [Latest Release](https://github.com/ahmadZMVD/Catch/releases/latest) |
+| **`Catch-v1.0.1-x86_64.apk`** | 64-bit x86 (`x86_64`) | ChromeOS, Android Studio Emulators, PC/WSA | [Latest Release](https://github.com/ahmadZMVD/Catch/releases/latest) |
+| **`Catch-v1.0.1-x86.apk`** | 32-bit x86 (`x86`) | Legacy x86 tablets & emulators | [Latest Release](https://github.com/ahmadZMVD/Catch/releases/latest) |
+| **`Catch-v1.0.1-universal.apk`** | All ABIs (`universal`) | Universal installer supporting every architecture | [Latest Release](https://github.com/ahmadZMVD/Catch/releases/latest) |
 
 ---
 
-## Building and Testing
+## Setup Guide (Android 9 – 16)
+
+1. **Add the Quick Settings Tile**: Open **Catch** and tap **Add Tile** in the setup card (or pull down your Quick Settings panel, tap the Edit pencil icon, and drag **Catch** into your active tiles).
+2. **Unlock Restricted Settings on Android 13+ (if sideloaded)**:
+   - **Step 2A**: Tap **1. Open Accessibility List**, tap **Catch**, and when Android shows the *"App was denied access"* dialog, tap **Close** (this unlocks the 3-dot menu in App Info).
+   - **Step 2B**: Return to Catch, tap **2. Open App Info**, tap the **3-dot menu (`⋮`)** in the top-right corner, and tap **Allow restricted settings** (on Xiaomi HyperOS, scroll to the bottom of App Info and enable *Allow restricted settings*; on Samsung One UI, ensure *Settings -> Security and privacy -> Auto Blocker* is off if restricted settings remains grayed out).
+   - **Step 2C**: Tap **3. Enable Catch in Accessibility** and switch **Catch** to **ON**.
+3. **Unrestricted Background Battery**: Tap **Unrestrict** in Step 4 of the setup card so your device OEM power manager does not suspend the Quick Settings tile or Accessibility service in the background.
+
+---
+
+## Building from Source
 
 ### Prerequisites
-
-- JDK 17 or newer
-- Android SDK Platform 36
+- JDK 21 (Temurin recommended)
+- Android SDK Platform 36 (`compileSdk 36`, `minSdk 28`)
 
 ### Build Commands
 
-Build all multi-ABI debug or release APKs (`arm64-v8a`, `armeabi-v7a`, `x86_64`, `x86`, and `universal`):
-
 ```bash
-./gradlew assembleDebug
-./gradlew assembleRelease
+# Run unit, fuzz, and Robolectric architectural tests
+./gradlew testDebugUnitTest
+
+# Assemble all ABI-split + universal Release APKs and generate SHA256SUMS.txt
+./gradlew assembleRelease collectReleaseApks
 ```
 
-### Running the Test Suite
-
-The project includes unit and Robolectric tests covering the multi-second Circle to Search recognition pipeline, foreground Activity lifecycle preservation, watchdog timeout recovery across failure modes, 500-iteration Accessibility hierarchy fuzzing, Room database concurrency, and API 28-36 compatibility branches:
-
-```bash
-./gradlew :app:testDebugUnitTest
-```
+Compiled APKs are written to `app/build/outputs/apk/release/` and staged in `dist/`.
 
 ---
 
-## Required Permissions and Setup
+## Privacy & Security
 
-1. **Quick Settings Tile (`BIND_QUICK_SETTINGS_TILE`)**: Add the **Catch** tile to the system Quick Settings panel so song recognition can be triggered while another app is playing audio.
-2. **Accessibility Service (`BIND_ACCESSIBILITY_SERVICE`)**: Enable **Catch Interceptor** in **Settings -> Accessibility -> Installed apps**. The service remains idle until a capture session is started from the Quick Settings tile or the in-app button.
-   - *Note for Android 13+ (API 33+) sideloaded APKs*: If the Accessibility toggle is restricted by the system, open **Settings -> Apps -> Catch**, tap the top-right overflow menu, and select **Allow restricted settings** before enabling the service.
-3. **Notifications (`POST_NOTIFICATIONS`)**: Required on Android 13+ to display the confirmation banner when a track is saved.
-4. **Unrestricted Battery Usage (`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`)**: Prevents background process restrictions from delaying Quick Settings tile actions or Accessibility window callbacks.
+- **Zero Network Permissions**: Catch does **not** request `android.permission.INTERNET`. It never uploads audio, screen contents, or analytics to any server.
+- **Event-Gated Inspection**: The Accessibility service only inspects `com.google.android.googlequicksearchbox` nodes during an active user-initiated song recognition window (hard-capped at `18s` by a watchdog timer) and remains completely idle at all other times.
 
 ---
 

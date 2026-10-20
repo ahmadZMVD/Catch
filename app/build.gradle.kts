@@ -1,3 +1,4 @@
+import java.security.MessageDigest
 import java.util.Base64
 
 plugins {
@@ -14,8 +15,8 @@ android {
     applicationId = "io.github.ahmadzmvd.catchapp"
     minSdk = 28
     targetSdk = 36
-    versionCode = 1
-    versionName = "1.0.0"
+    versionCode = 101
+    versionName = "1.0.1"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -31,7 +32,7 @@ android {
 
   packaging {
     jniLibs {
-      useLegacyPackaging = false
+      useLegacyPackaging = true
     }
     resources {
       excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -47,6 +48,9 @@ android {
 
   signingConfigs {
     create("release") {
+      enableV1Signing = true
+      enableV2Signing = true
+      enableV3Signing = true
       val customKeystorePath = System.getenv("KEYSTORE_PATH")
       val customKeystoreFile = if (!customKeystorePath.isNullOrBlank()) {
         file(customKeystorePath)
@@ -75,8 +79,9 @@ android {
 
   buildTypes {
     release {
-      isCrunchPngs = false
-      isMinifyEnabled = false
+      isCrunchPngs = true
+      isMinifyEnabled = true
+      isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       signingConfig = signingConfigs.getByName("release")
     }
@@ -101,6 +106,7 @@ android {
       isReturnDefaultValues = true
       all {
         it.maxHeapSize = "1536m"
+        it.maxParallelForks = 1
       }
     }
   }
@@ -142,5 +148,35 @@ dependencies {
   androidTestImplementation(libs.androidx.runner)
   debugImplementation(libs.androidx.compose.ui.test.manifest)
   debugImplementation(libs.androidx.compose.ui.tooling)
-  "ksp"(libs.androidx.room.compiler)
+
+  ksp(libs.androidx.room.compiler)
+}
+
+tasks.register("collectReleaseApks") {
+  dependsOn("assembleRelease")
+  doLast {
+    val releaseDir = layout.buildDirectory.dir("outputs/apk/release").get().asFile
+    val distDir = rootProject.file("dist")
+    distDir.mkdirs()
+    val versionTag = "v${android.defaultConfig.versionName}"
+    val abis = listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86", "universal")
+    val checksumLines = mutableListOf<String>()
+
+    for (abi in abis) {
+      val srcApk = releaseDir.listFiles()?.firstOrNull {
+        it.isFile && it.extension == "apk" && it.name.contains(abi)
+      } ?: throw GradleException("Missing release APK for ABI: $abi in ${releaseDir.absolutePath}")
+
+      val targetName = "Catch-${versionTag}-${abi}.apk"
+      val targetFile = File(distDir, targetName)
+      srcApk.copyTo(targetFile, overwrite = true)
+
+      val digest = MessageDigest.getInstance("SHA-256")
+      val hashBytes = digest.digest(targetFile.readBytes())
+      val hexHash = hashBytes.joinToString("") { "%02x".format(it) }
+      checksumLines.add("$hexHash  $targetName")
+    }
+
+    File(distDir, "SHA256SUMS.txt").writeText(checksumLines.joinToString("\n") + "\n")
+  }
 }

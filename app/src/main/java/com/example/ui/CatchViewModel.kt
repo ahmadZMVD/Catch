@@ -82,7 +82,8 @@ class CatchViewModel(
         SystemPermissionHelper.evaluateSystemHealth(
             context = appContext,
             isTileAddedFlag = prefs.isTileAddedToQuickSettings,
-            hasVisitedAccessibilityFlag = prefs.hasVisitedAccessibilitySettings
+            hasVisitedAccessibilityFlag = prefs.hasVisitedAccessibilitySettings,
+            hasVisitedAppInfoFlag = prefs.hasVisitedAppInfo
         )
     }
 
@@ -217,6 +218,15 @@ class CatchViewModel(
             refreshSystemHealth()
         }
     }
+
+    fun markVisitedAppInfo() {
+        viewModelScope.launch {
+            preferencesRepository.setHasVisitedAppInfo(true)
+            refreshSystemHealth()
+        }
+    }
+
+    fun markVisitedAppInfoSettings() = markVisitedAppInfo()
 
     /**
      * Triggers the Unified Circle to Search (Internal Audio) pipeline from the 56.dp bottom circular button.

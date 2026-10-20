@@ -64,6 +64,47 @@ class RepositoryHygieneTest {
     }
 
     @Test
+    fun `manifest, accessibility config, and gradle build enforce Play Protect trust and compact APK packaging`() {
+        val root = resolveProjectRoot()
+
+        val manifestContent = File(root, "app/src/main/AndroidManifest.xml").readText(Charsets.UTF_8)
+        val forbiddenQueries = listOf(
+            "com.instagram.android",
+            "org.telegram.messenger",
+            "com.zhiliaoapp.musically",
+            "com.spotify.music",
+            "com.google.android.youtube",
+            "EXPAND_STATUS_BAR"
+        )
+        for (forbidden in forbiddenQueries) {
+            assertFalse(
+                "AndroidManifest.xml must not contain Play Protect heuristic trigger: $forbidden",
+                manifestContent.contains(forbidden)
+            )
+        }
+        assertTrue(
+            "AndroidManifest.xml must query com.google.android.googlequicksearchbox",
+            manifestContent.contains("com.google.android.googlequicksearchbox")
+        )
+        assertTrue(
+            "AndroidManifest.xml must query legacy prototype com.aistudio.catchsong.kxmpzq for cleanup detection",
+            manifestContent.contains("com.aistudio.catchsong.kxmpzq")
+        )
+
+        val a11yXml = File(root, "app/src/main/res/xml/accessibility_service_config.xml").readText(Charsets.UTF_8)
+        assertFalse(
+            "accessibility_service_config.xml must not request canRequestTouchExplorationMode",
+            a11yXml.contains("canRequestTouchExplorationMode")
+        )
+
+        val appGradle = File(root, "app/build.gradle.kts").readText(Charsets.UTF_8)
+        assertTrue("useLegacyPackaging = true must be enabled for compressed .so packaging", appGradle.contains("useLegacyPackaging = true"))
+        assertTrue("isMinifyEnabled = true must be enabled for release builds", appGradle.contains("isMinifyEnabled = true"))
+        assertTrue("isShrinkResources = true must be enabled for release builds", appGradle.contains("isShrinkResources = true"))
+        assertTrue("includeInApk = false must be set in dependenciesInfo", appGradle.contains("includeInApk = false"))
+    }
+
+    @Test
     fun `all Kotlin source and test files are pure 7-bit ASCII with Unicode escapes to prevent encoding corruption`() {
         val root = resolveProjectRoot()
         val kotlinDirs = listOf(
