@@ -57,39 +57,56 @@ fun LegacyPrototypeWarningCard(
     val tokens = LocalBoneTokens.current
     Surface(
         color = tokens.cardSurface,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         border = BorderStroke(1.dp, tokens.accentInteractive),
         modifier = Modifier
             .fillMaxWidth()
             .testTag("legacy_prototype_warning_card")
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text(
-                text = "Duplicate Old Version Detected",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = tokens.accentInteractive
-            )
-            Text(
-                text = "An older test build of Catch is still installed and creates a duplicate entry in Accessibility settings. Tap below to remove the old version first.",
-                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
-                color = tokens.textSecondary
-            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = "Duplicate Old Version Detected",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = tokens.accentInteractive
+                )
+                Text(
+                    text = "Remove the old test build so only one Catch entry appears in Accessibility.",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontSize = 11.sp,
+                        lineHeight = 14.sp
+                    ),
+                    color = tokens.textSecondary
+                )
+            }
             Surface(
                 color = tokens.accentInteractive,
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(10.dp),
                 modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(10.dp))
                     .clickable(onClick = onUninstallLegacyPrototype)
                     .testTag("uninstall_legacy_prototype_button")
             ) {
                 Text(
-                    text = "Uninstall Old Version",
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                    text = "Uninstall Old",
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold
+                    ),
                     color = tokens.accentOnPrimary,
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
                 )
             }
         }
@@ -123,8 +140,8 @@ fun SystemSetupWizardCard(
             .testTag("system_setup_wizard_card")
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -137,21 +154,20 @@ fun SystemSetupWizardCard(
                         style = MaterialTheme.typography.labelSmall,
                         color = tokens.accentInteractive
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = if (health.isFullyOptimized) {
                             "All Recognition Services Active"
                         } else {
                             "Complete 60-Second Recognition Setup"
                         },
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleMedium.copy(fontSize = 14.sp),
                         color = tokens.textPrimary
                     )
                 }
                 if (health.isCoreReady) {
                     IconButton(
                         onClick = onDismissSetupCard,
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(28.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Close,
@@ -169,7 +185,7 @@ fun SystemSetupWizardCard(
                 subtitle = if (health.isQuickSettingsTileAdded) {
                     "Added to Quick Settings panel"
                 } else {
-                    "Add tile to your top Quick Settings panel for 1-tap catching inside any app"
+                    "Add tile to Quick Settings for 1-tap catching"
                 },
                 isComplete = health.isQuickSettingsTileAdded,
                 actionLabel = if (health.isQuickSettingsTileAdded) "Re-Add" else "Add Tile",
@@ -185,7 +201,7 @@ fun SystemSetupWizardCard(
                 subtitle = if (health.isAccessibilityServiceEnabled) {
                     "Active \u2022 Passively gated until tile is tapped"
                 } else {
-                    "Taps the Circle to Search Music button & saves the recognized song title"
+                    "Taps Circle to Search Music button & saves song title"
                 },
                 isComplete = health.isAccessibilityServiceEnabled,
                 actionLabel = if (health.isAccessibilityServiceEnabled) "Enabled" else "Enable",
@@ -210,7 +226,7 @@ fun SystemSetupWizardCard(
                 subtitle = if (health.isNotificationPermissionGranted) {
                     "Enabled \u2022 Alerts you immediately when a song is saved"
                 } else {
-                    "Required on Android 13+ to show the 'Song Saved' confirmation banner"
+                    "Required on Android 13+ for 'Song Saved' banner"
                 },
                 isComplete = health.isNotificationPermissionGranted,
                 actionLabel = if (health.isNotificationPermissionGranted) "Granted" else "Allow",
@@ -224,9 +240,9 @@ fun SystemSetupWizardCard(
                 stepNumber = "4",
                 title = "Background Battery Protection (Unrestricted)",
                 subtitle = if (health.isBatteryOptimizationIgnored) {
-                    "Unrestricted \u2022 Protected from background service restrictions"
+                    "Unrestricted \u2022 Protected from background limits"
                 } else {
-                    "Prevents the system from restricting the tile or interceptor in the background"
+                    "Prevents OEM battery limits from suspending tile"
                 },
                 isComplete = health.isBatteryOptimizationIgnored,
                 actionLabel = if (health.isBatteryOptimizationIgnored) "Protected" else "Unrestrict",
@@ -258,8 +274,8 @@ fun RestrictedSettingsUnlockCard(
             .testTag("restricted_settings_unlock_card")
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            modifier = Modifier.padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Row(
                 modifier = Modifier
@@ -277,12 +293,12 @@ fun RestrictedSettingsUnlockCard(
                         imageVector = Icons.Outlined.Security,
                         contentDescription = null,
                         tint = tokens.accentInteractive,
-                        modifier = Modifier.size(15.dp)
+                        modifier = Modifier.size(14.dp)
                     )
                     Text(
-                        text = "Android 13+ Restricted Settings Unlock (Steps 2A -> 2B -> 2C)",
+                        text = "Android 13+ Restricted Settings Unlock (2A -> 2B -> 2C)",
                         style = MaterialTheme.typography.labelLarge.copy(
-                            fontSize = 12.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold
                         ),
                         color = tokens.textPrimary
@@ -298,31 +314,31 @@ fun RestrictedSettingsUnlockCard(
 
             if (showRestrictedGuide) {
                 RestrictedUnlockSubstepCard(
-                    badge = "Step 2A",
+                    badge = "2A",
                     isCurrentStep = activeUnlockStep == RestrictedUnlockStep.STEP_2A_TRIGGER_PROMPT,
                     isCompleted = health.hasVisitedAccessibilitySettings,
-                    instruction = "Tap \"1. Open Accessibility List\", tap \"Catch\", and when the \"App was denied access\" popup appears, tap \"Close\" (do not tap Learn More) and return here.",
-                    buttonLabel = "1. Open Accessibility List",
+                    instruction = "Tap Catch in Accessibility; tap Close on 'Denied access' popup.",
+                    buttonLabel = "1. Open List",
                     buttonTestTag = "step_2a_accessibility_button",
                     onClick = onOpenAccessibilitySettings
                 )
 
                 RestrictedUnlockSubstepCard(
-                    badge = "Step 2B",
+                    badge = "2B",
                     isCurrentStep = activeUnlockStep == RestrictedUnlockStep.STEP_2B_ALLOW_IN_APP_INFO,
                     isCompleted = health.hasVisitedAppInfoSettings,
-                    instruction = "Now that the menu is unlocked: tap \"2. Open App Info\", tap the 3-dot icon (\u22EE) in the top-right corner, select \"Allow restricted settings\", and confirm with your Fingerprint or PIN.",
-                    buttonLabel = "2. Open App Info (Tap \u22EE at Top-Right)",
+                    instruction = "In App Info, tap \u22EE (top-right) -> Allow restricted settings.",
+                    buttonLabel = "2. App Info (\u22EE)",
                     buttonTestTag = "open_app_info_restricted_button",
                     onClick = onOpenAppInfoForRestrictedSettings
                 )
 
                 RestrictedUnlockSubstepCard(
-                    badge = "Step 2C",
+                    badge = "2C",
                     isCurrentStep = activeUnlockStep == RestrictedUnlockStep.STEP_2C_ENABLE_ACCESSIBILITY,
                     isCompleted = health.isAccessibilityServiceEnabled,
-                    instruction = "Finally, tap \"3. Enable Catch in Accessibility\" and switch \"Catch\" to ON.",
-                    buttonLabel = "3. Enable Catch in Accessibility",
+                    instruction = "Return to Accessibility -> Installed apps and switch Catch ON.",
+                    buttonLabel = "3. Enable Catch",
                     buttonTestTag = "step_2c_enable_button",
                     onClick = onOpenAccessibilitySettings
                 )
@@ -343,15 +359,21 @@ fun RestrictedSettingsUnlockCard(
                     ) {
                         Text(
                             text = "Auto-Unlock via Store Session",
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.SemiBold
+                            ),
                             color = tokens.textPrimary,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
                         )
                     }
 
                     Text(
                         text = if (showOemTips) "Hide OEM Tips" else "Xiaomi / Samsung Tips",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.SemiBold
+                        ),
                         color = tokens.accentInteractive,
                         modifier = Modifier
                             .clickable { showOemTips = !showOemTips }
@@ -362,9 +384,12 @@ fun RestrictedSettingsUnlockCard(
 
                 if (showOemTips) {
                     Text(
-                        text = "\u2022 Samsung Auto Blocker: If \"Allow restricted settings\" is still blocked on Samsung, turn off Settings -> Security and privacy -> Auto Blocker.\n" +
-                            "\u2022 Xiaomi HyperOS: Scroll down in App Info -> Enable \"Allow restricted settings\".",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 11.sp),
+                        text = "\u2022 Samsung: Turn off Settings -> Security and privacy -> Auto Blocker if blocked.\n" +
+                            "\u2022 Xiaomi HyperOS: Scroll down in App Info -> Enable 'Allow restricted settings'.",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontSize = 10.sp,
+                            lineHeight = 13.sp
+                        ),
                         color = tokens.textSecondary
                     )
                 }
@@ -391,56 +416,48 @@ private fun RestrictedUnlockSubstepCard(
     }
     Surface(
         color = tokens.cardSurface,
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(8.dp),
         border = BorderStroke(if (isCurrentStep) 1.25.dp else 0.75.dp, borderColor),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(
-            modifier = Modifier.padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            Surface(
+                color = when {
+                    isCompleted -> tokens.statusReadyBg
+                    isCurrentStep -> tokens.accentInteractive.copy(alpha = 0.14f)
+                    else -> tokens.iconBadgeSurface
+                },
+                shape = RoundedCornerShape(6.dp)
             ) {
-                Surface(
+                Text(
+                    text = badge,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
                     color = when {
-                        isCompleted -> tokens.statusReadyBg
-                        isCurrentStep -> tokens.accentInteractive.copy(alpha = 0.14f)
-                        else -> tokens.iconBadgeSurface
+                        isCompleted -> tokens.statusReady
+                        isCurrentStep -> tokens.accentInteractive
+                        else -> tokens.textSecondary
                     },
-                    shape = RoundedCornerShape(6.dp)
-                ) {
-                    Text(
-                        text = badge,
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = when {
-                            isCompleted -> tokens.statusReady
-                            isCurrentStep -> tokens.accentInteractive
-                            else -> tokens.textSecondary
-                        },
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
-                }
-                if (isCurrentStep) {
-                    Text(
-                        text = "Next Action",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = tokens.accentInteractive
-                    )
-                } else if (isCompleted) {
-                    Text(
-                        text = "Done",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = tokens.statusReady
-                    )
-                }
+                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                )
             }
 
             Text(
                 text = instruction,
-                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
-                color = tokens.textSecondary
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = 11.sp,
+                    lineHeight = 13.sp
+                ),
+                color = tokens.textSecondary,
+                modifier = Modifier.weight(1f)
             )
 
             Surface(
@@ -453,14 +470,14 @@ private fun RestrictedUnlockSubstepCard(
                     .testTag(buttonTestTag)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
                         text = buttonLabel,
                         style = MaterialTheme.typography.labelLarge.copy(
-                            fontSize = 12.sp,
+                            fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold
                         ),
                         color = if (isCurrentStep) tokens.accentOnPrimary else tokens.textPrimary
@@ -469,7 +486,7 @@ private fun RestrictedUnlockSubstepCard(
                         imageVector = Icons.AutoMirrored.Outlined.OpenInNew,
                         contentDescription = null,
                         tint = if (isCurrentStep) tokens.accentOnPrimary else tokens.textPrimary,
-                        modifier = Modifier.size(13.dp)
+                        modifier = Modifier.size(11.dp)
                     )
                 }
             }
@@ -494,7 +511,7 @@ private fun SetupStepRow(
     ) {
         Box(
             modifier = Modifier
-                .size(28.dp)
+                .size(24.dp)
                 .clip(CircleShape)
                 .background(if (isComplete) tokens.statusReadyBg else tokens.iconBadgeSurface),
             contentAlignment = Alignment.Center
@@ -504,7 +521,7 @@ private fun SetupStepRow(
                     imageVector = Icons.Filled.CheckCircle,
                     contentDescription = "Completed",
                     tint = tokens.statusReady,
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(14.dp)
                 )
             } else {
                 Text(
@@ -515,40 +532,43 @@ private fun SetupStepRow(
             }
         }
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(10.dp))
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleMedium.copy(fontSize = 14.sp),
+                style = MaterialTheme.typography.titleMedium.copy(fontSize = 13.sp),
                 color = tokens.textPrimary
             )
             Text(
                 text = subtitle,
-                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = 11.sp,
+                    lineHeight = 13.sp
+                ),
                 color = tokens.textSecondary
             )
         }
 
-        Spacer(modifier = Modifier.width(10.dp))
+        Spacer(modifier = Modifier.width(8.dp))
 
         Surface(
             color = if (isComplete) tokens.backgroundPrimary else tokens.accentPrimary,
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(14.dp),
             border = BorderStroke(0.75.dp, if (isComplete) tokens.borderHairline else tokens.accentPrimary),
             modifier = Modifier
-                .clip(RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(14.dp))
                 .clickable(onClick = onActionClick)
                 .testTag(testTag)
         ) {
             Text(
                 text = actionLabel,
                 style = MaterialTheme.typography.labelLarge.copy(
-                    fontSize = 12.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold
                 ),
                 color = if (isComplete) tokens.textSecondary else tokens.accentOnPrimary,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
             )
         }
     }
